@@ -2,6 +2,7 @@
 # GameManager — Autoload singleton
 # Manages game state: grid, player, trees, growth, absorption,
 # trade, animation state. Replaces the monolith main.gd state.
+# Juice: death_anims for rival death particles, screen_shake_requested signal
 # ═══════════════════════════════════════════════════════════════
 extends Node
 
@@ -64,6 +65,7 @@ var trees: Array[Dictionary] = []
 
 # ── Animations ─────────────────────────────────────────────
 var anim_pulses: Array[Dictionary] = []
+var death_anims: Array[Dictionary] = []
 
 # ── State ──────────────────────────────────────────────────
 var seed_val: int = 0
@@ -71,6 +73,7 @@ var growth_candidates: Array[Vector2i] = []
 var selected_tree_idx: int = -1
 var message_text: String = ""
 var message_timer: float = 0.0
+var is_resetting: bool = false
 
 # ── History tracking ───────────────────────────────────────
 const HISTORY_INTERVAL: float = 2.0  # snapshot every 2 seconds
@@ -86,6 +89,8 @@ signal state_changed
 signal show_message(msg: String)
 signal trade_completed(tree_idx: int, cost: int, gain: int)
 signal game_ended(reason: String)
+signal screen_shake_requested(intensity: float)
+signal reset_fade_requested
 
 # ═══════════════════════════════════════════════════════════════
 # LIFECYCLE
@@ -106,6 +111,7 @@ func new_game() -> void:
 	history_timer = HISTORY_INTERVAL
 	_record_history_snapshot()
 	message_text = "Seed: %d — Grow with arrow keys, trade with 1/2/3, reset: R" % seed_val
+	is_resetting = false
 	state_changed.emit()
 
 
@@ -274,7 +280,10 @@ func _absorb_resource(cell: Vector2i, is_player: bool) -> void:
 	grid_resources[cell.y][cell.x] = 0.0
 	grid[cell.y][cell.x] = CellType.EMPTY
 
+	# GPU particle burst: add multiple small pulses for juice
 	_add_pulse(cell, Color(1.0, 0.9, 0.2), "absorb")
+	_add_pulse(cell, Color(1.0, 0.7, 0.1), "absorb")  # extra warm particle
+	_add_pulse(cell, Color(1.0, 1.0, 0.5), "absorb")  # bright spark
 
 	if is_player:
 		player_absorbed += 1
@@ -377,6 +386,7 @@ func _add_pulse(pos: Vector2i, color: Color, type: String) -> void:
 
 
 func update_animations(delta: float) -> void:
+	# Update cell pulses
 	var i: int = 0
 	while i < anim_pulses.size():
 		var a: Dictionary = anim_pulses[i]
@@ -385,6 +395,24 @@ func update_animations(delta: float) -> void:
 			anim_pulses.remove_at(i)
 		else:
 			i += 1
+
+	# Update death animations
+	var j: int = 0
+	while j < death_anims.size():
+		var da: Dictionary = death_anims[j]
+		da["t"] += delta * 2.0
+		if da["t"] >= 1.0:
+			death_anims.remove_at(j)
+		else:
+			j += 1
+
+
+func _add_death_pulse(pos: Vector2i, color: Color) -> void:
+	death_anims.append({"pos": pos, "t": 0.0, "color": color})
+
+
+func request_screen_shake(intensity: float = 0.3) -> void:
+	screen_shake_requested.emit(intensity)
 
 # ═══════════════════════════════════════════════════════════════
 # UTILITY
@@ -421,7 +449,28 @@ func _cell_type_name(ct: int) -> String:
 	return "?"
 
 
+# ═══════════════════════════════════════════════════════════════
+# RESET (with death animation for rivals)
+# ═══════════════════════════════════════════════════════════════
+
+func reset_with_animations() -> void:
+	"""Phase 1: Spawn death particles on rival cells, request fade out."""
+	# Capture rival cells BEFORE clearing
+	var am = get_node_or_null("/root/AIManager")
+	if am != null:
+		for rival: Dictionary in am.rivals:
+			var rival_color: Color = rival["color"]
+			for cell: Vector2i in rival["cells"]:
+				_add_death_pulse(cell, rival_color)
+				# Extra white flash for pop
+				_add_death_pulse(cell, Color(1.0, 1.0, 1.0))
+
+	is_resetting = true
+	reset_fade_requested.emit()
+
+
 func reset() -> void:
+	"""Called after fade-out completes to actually clear state."""
 	player_cells.clear()
 	player_gp = 10.0
 	player_gp_rate = BASE_GP_RATE
@@ -432,12 +481,14 @@ func reset() -> void:
 	player_growth_progress = 0.0
 	trees.clear()
 	anim_pulses.clear()
+	death_anims.clear()
 	selected_tree_idx = -1
 	growth_candidates.clear()
 	game_over = false
 	game_over_reason = ""
 	history.clear()
 	history_timer = 0.0
+	is_resetting = false
 	state_changed.emit()
 	new_game()
 

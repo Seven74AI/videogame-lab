@@ -2,8 +2,13 @@
 # main.gd — DEEP ROOT proto v3 (refactored)
 # Thin orchestration: input handling, delegates to autoloads.
 # GridLayer handles rendering, UILayer handles HUD.
+# Juice: Camera2D screen shake + ColorRect fade transitions
 # ═══════════════════════════════════════════════════════════════
 extends Node2D
+
+@onready var _camera: Camera2D = $Camera2D
+@onready var _fade_overlay: CanvasLayer = $FadeCanvas
+@onready var _fade_rect: ColorRect = $FadeCanvas/ColorRect
 
 var mouse_pos: Vector2 = Vector2.ZERO
 var hover_cell: Vector2i = Vector2i(-1, -1)
@@ -11,8 +16,31 @@ var hover_cell: Vector2i = Vector2i(-1, -1)
 var _end_screen_scene: PackedScene = preload("res://scenes/end_screen.tscn")
 var _end_screen_instance: CanvasLayer = null
 
+# ── Screen shake state ────────────────────────────────────
+var _shake_intensity: float = 0.0
+var _shake_decay: float = 0.9
+
+# ── Fade state ────────────────────────────────────────────
+enum FadeState { NONE, FADING_OUT, WAITING, FADING_IN }
+var _fade_state: int = FadeState.NONE
+var _fade_progress: float = 0.0
+const FADE_DURATION: float = 0.4
+const FADE_HOLD: float = 0.3  # Time to hold at full black while reset happens
+var _fade_hold_timer: float = 0.0
+
 
 func _ready() -> void:
+	# Connect screen shake signal
+	var gm: GameManager = GameManager
+	if not gm.screen_shake_requested.is_connected(_on_screen_shake_requested):
+		gm.screen_shake_requested.connect(_on_screen_shake_requested)
+	if not gm.reset_fade_requested.is_connected(_on_reset_fade_requested):
+		gm.reset_fade_requested.connect(_on_reset_fade_requested)
+
+	# Init fade overlay: fully transparent
+	_fade_rect.modulate = Color(0, 0, 0, 0)
+	_fade_overlay.visible = false
+
 	GameManager.new_game()
 	AIManager.setup_rivals()
 	GameManager.game_ended.connect(_on_game_ended)
@@ -30,52 +58,64 @@ func _process(delta: float) -> void:
 	if gm.game_over:
 		return
 
-	# GP accrual
-	gm.player_gp += gm.player_gp_rate * delta
+	# ── Game logic (skip during reset fade) ────────────────
+	if not gm.is_resetting:
+		# GP accrual
+		gm.player_gp += gm.player_gp_rate * delta
 
-	# Growth progress (auto-grow timer — uses base GROWTH_COST as timing)
-	gm.player_growth_progress += gm.player_gp_rate * delta
-	if gm.player_growth_progress >= gm.GROWTH_COST:
-		gm.player_growth_progress -= gm.GROWTH_COST
-		gm.update_growth_candidates()
-		if not gm.growth_candidates.is_empty():
-			gm.try_grow()
+		# Growth progress (auto-grow timer — uses base GROWTH_COST as timing)
+		gm.player_growth_progress += gm.player_gp_rate * delta
+		if gm.player_growth_progress >= gm.GROWTH_COST:
+			gm.player_growth_progress -= gm.GROWTH_COST
+			gm.update_growth_candidates()
+			if not gm.growth_candidates.is_empty():
+				gm.try_grow()
 
-	# Rival AI ticks
-	for i: int in range(3):
-		am.rival_timers[i] -= delta
-		if am.rival_timers[i] <= 0.0:
-			am.rival_grow(i)
-			am.rival_timers[i] = am.rival_intervals[i]
+		# Rival AI ticks
+		for i: int in range(am.rivals.size()):
+			am.rival_timers[i] -= delta
+			if am.rival_timers[i] <= 0.0:
+				am.rival_grow(i)
+				am.rival_timers[i] = am.rival_intervals[i]
 
-	# Rival phase cycles
-	am.update_rival_phases(delta)
+		# Rival phase cycles
+		am.update_rival_phases(delta)
 
-	# Animations
-	gm.update_animations(delta)
+		# Animations
+		gm.update_animations(delta)
 
-	# Tree cooldowns + regen
-	for tree: Dictionary in gm.trees:
-		if tree["cooldown"] > 0:
-			tree["cooldown"] -= delta
-		# Regen: only tick when trades_left < max
-		if tree["trades_left"] < gm.MAX_TRADES_PER_TREE:
-			tree["regen_timer"] -= delta
-			if tree["regen_timer"] <= 0.0:
-				tree["trades_left"] += 1
-				tree["regen_timer"] = gm.REGEN_INTERVAL
+		# Tree cooldowns + regen
+		for tree: Dictionary in gm.trees:
+			if tree["cooldown"] > 0:
+				tree["cooldown"] -= delta
+			# Regen: only tick when trades_left < max
+			if tree["trades_left"] < gm.MAX_TRADES_PER_TREE:
+				tree["regen_timer"] -= delta
+				if tree["regen_timer"] <= 0.0:
+					tree["trades_left"] += 1
+					tree["regen_timer"] = gm.REGEN_INTERVAL
 
-	# Message timer
-	if gm.message_timer > 0:
-		gm.message_timer -= delta
+		# Message timer
+		if gm.message_timer > 0:
+			gm.message_timer -= delta
 
-	# Mouse hover
+	# ── Screen shake ───────────────────────────────────────
+	_update_screen_shake(delta)
+
+	# ── Fade transition ────────────────────────────────────
+	_update_fade(delta)
+
+	# ── Mouse hover ────────────────────────────────────────
 	_update_hover()
 
 
 func _input(event: InputEvent) -> void:
 	var gm: GameManager = GameManager
 	if gm.game_over:
+		return
+
+	# Block input during fade/reset
+	if _fade_state != FadeState.NONE or gm.is_resetting:
 		return
 
 	if event is InputEventMouseMotion:
@@ -117,8 +157,8 @@ func _input(event: InputEvent) -> void:
 		gm.try_player_grow_to(center + grow_dir)
 
 	if Input.is_action_just_pressed("reset"):
-		gm.reset()
-		AIManager.setup_rivals()
+		# Start fade-out → death animation → reset → fade-in
+		gm.reset_with_animations()
 
 	if Input.is_action_just_pressed("cycle_tree"):
 		if gm.trees.size() > 0:
@@ -126,6 +166,74 @@ func _input(event: InputEvent) -> void:
 			gm.message_text = "Tree %d selected" % (gm.selected_tree_idx + 1)
 			gm.message_timer = 2.0
 
+
+# ═══════════════════════════════════════════════════════════════
+# SCREEN SHAKE
+# ═══════════════════════════════════════════════════════════════
+
+func _on_screen_shake_requested(intensity: float) -> void:
+	# Only apply if intensity is higher than current
+	_shake_intensity = maxf(_shake_intensity, intensity)
+
+
+func _update_screen_shake(delta: float) -> void:
+	if _shake_intensity > 0.001:
+		var offset_x: float = randf_range(-_shake_intensity, _shake_intensity) * 4.0
+		var offset_y: float = randf_range(-_shake_intensity, _shake_intensity) * 4.0
+		_camera.offset = Vector2(offset_x, offset_y)
+		_shake_intensity *= _shake_decay
+	else:
+		_shake_intensity = 0.0
+		_camera.offset = Vector2.ZERO
+
+
+# ═══════════════════════════════════════════════════════════════
+# FADE TRANSITION
+# ═══════════════════════════════════════════════════════════════
+
+func _on_reset_fade_requested() -> void:
+	_fade_state = FadeState.FADING_OUT
+	_fade_progress = 0.0
+	_fade_hold_timer = 0.0
+	_fade_overlay.visible = true
+	_fade_rect.modulate = Color(0, 0, 0, 0)
+
+
+func _update_fade(delta: float) -> void:
+	match _fade_state:
+		FadeState.FADING_OUT:
+			_fade_progress += delta / FADE_DURATION
+			if _fade_progress >= 1.0:
+				_fade_progress = 1.0
+				_fade_rect.modulate = Color(0, 0, 0, 1.0)
+				_fade_state = FadeState.WAITING
+				_fade_hold_timer = 0.0
+				# Execute the actual reset now (screen is black)
+				GameManager.reset()
+				AIManager.setup_rivals()
+			else:
+				_fade_rect.modulate = Color(0, 0, 0, _fade_progress)
+
+		FadeState.WAITING:
+			_fade_hold_timer += delta
+			if _fade_hold_timer >= FADE_HOLD:
+				_fade_state = FadeState.FADING_IN
+				_fade_progress = 1.0
+
+		FadeState.FADING_IN:
+			_fade_progress -= delta / FADE_DURATION
+			if _fade_progress <= 0.0:
+				_fade_progress = 0.0
+				_fade_rect.modulate = Color(0, 0, 0, 0)
+				_fade_overlay.visible = false
+				_fade_state = FadeState.NONE
+			else:
+				_fade_rect.modulate = Color(0, 0, 0, _fade_progress)
+
+
+# ═══════════════════════════════════════════════════════════════
+# HOVER
+# ═══════════════════════════════════════════════════════════════
 
 func _update_hover() -> void:
 	var gm: GameManager = GameManager

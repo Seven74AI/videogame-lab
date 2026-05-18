@@ -2,6 +2,7 @@
 # AIManager — Autoload singleton
 # Manages 3 rival AIs with AStarGrid2D pathfinding
 # Phase system: rivals cycle between 2-3 personality phases
+# Juice: triggers screen shake when rival grows near player
 # ═══════════════════════════════════════════════════════════════
 extends Node
 
@@ -44,6 +45,11 @@ var rivals: Array[Dictionary] = []
 var rival_timers: Array[float] = [0.0, 0.0, 0.0]
 var rival_intervals: Array[float] = []
 
+# ── Death tracking ────────────────────────────────────────
+# How many consecutive ticks a rival had zero growth candidates
+var _blockaded_ticks: Array[int] = [0, 0, 0]
+const DEATH_BLOCKADE_THRESHOLD: int = 5
+
 # ── Pathfinding ────────────────────────────────────────────
 var _astar: AStarGrid2D
 
@@ -51,6 +57,7 @@ var _astar: AStarGrid2D
 func setup_rivals() -> void:
 	rivals.clear()
 	rival_intervals.clear()
+	_blockaded_ticks = [0, 0, 0]
 
 	var gm = get_node_or_null("/root/GameManager")
 	if gm == null: return
@@ -198,7 +205,13 @@ func rival_grow(rival_idx: int) -> void:
 				if not occupied.has(n) and gm.grid[n.y][n.x] == gm.CellType.EMPTY:
 					candidates[n] = true
 
-	if candidates.is_empty(): return
+	# ── Death check: completely blockaded ──────────────────
+	if candidates.is_empty():
+		_blockaded_ticks[rival_idx] += 1
+		if _blockaded_ticks[rival_idx] >= DEATH_BLOCKADE_THRESHOLD:
+			_rival_die(rival_idx)
+		return
+	_blockaded_ticks[rival_idx] = 0
 
 	# Score
 	var best_score: float = -999.0
@@ -244,7 +257,7 @@ func rival_grow(rival_idx: int) -> void:
 			best_score = score
 			best_cell = cand
 
-	# Grow
+	# ── Grow ───────────────────────────────────────────────
 	gm.grid[best_cell.y][best_cell.x] = cell_type
 	cells.append(best_cell)
 	rival["absorbed"] += 1
@@ -261,4 +274,73 @@ func rival_grow(rival_idx: int) -> void:
 		rival["gp"] += 3.0
 		gm._add_pulse(best_cell, Color(1.0, 0.9, 0.2), "absorb")
 
+	# ── Screen shake: rival grew near player territory ─────
+	_check_proximity_shake(best_cell, personality)
+
 	rival_intervals[rival_idx] = randf_range(RIVAL_INTERVAL_MIN, RIVAL_INTERVAL_MAX)
+
+
+# ═══════════════════════════════════════════════════════════════
+# JUICE: SCREEN SHAKE + RIVAL DEATH
+# ═══════════════════════════════════════════════════════════════
+
+func _check_proximity_shake(cell: Vector2i, personality: String) -> void:
+	"""Trigger screen shake when a rival cell is close to player territory."""
+	var gm = get_node_or_null("/root/GameManager")
+	if gm == null: return
+
+	var min_dist: float = 999.0
+	for pc: Vector2i in gm.player_cells:
+		var d: float = Vector2(cell).distance_to(Vector2(pc))
+		min_dist = minf(min_dist, d)
+
+	# Shake intensity based on distance: closer = stronger
+	if min_dist <= 3.0:
+		# Very close: aggressive shake
+		gm.request_screen_shake(0.4)
+	elif min_dist <= 6.0:
+		# Medium: light shake
+		gm.request_screen_shake(0.2)
+	elif min_dist <= 10.0 and personality == "aggressive":
+		# Aggressive rival expanding in general vicinity: subtle rumble
+		gm.request_screen_shake(0.1)
+
+
+func _rival_die(rival_idx: int) -> void:
+	"""Kill a blockaded rival with death animation."""
+	if rival_idx < 0 or rival_idx >= rivals.size():
+		return
+
+	var gm = get_node_or_null("/root/GameManager")
+	if gm == null: return
+
+	var rival: Dictionary = rivals[rival_idx]
+	var color: Color = rival["color"]
+
+	# Spawn death particles on all rival cells
+	for cell: Vector2i in rival["cells"]:
+		gm._add_death_pulse(cell, color)
+		gm._add_death_pulse(cell, Color(1.0, 1.0, 1.0))
+
+	# Clear rival cells from grid
+	for cell: Vector2i in rival["cells"]:
+		if cell.x >= 0 and cell.x < gm.GRID_W and cell.y >= 0 and cell.y < gm.GRID_H:
+			gm.grid[cell.y][cell.x] = gm.CellType.EMPTY
+
+	# Remove rival
+	rival["cells"].clear()
+	rivals.remove_at(rival_idx)
+	rival_timers.remove_at(rival_idx)
+	rival_intervals.remove_at(rival_idx)
+	_blockaded_ticks.remove_at(rival_idx)
+
+	gm.message_text = "Rival %s eliminated! (blockaded)" % _rival_name(color)
+	gm.message_timer = 3.0
+	gm.state_changed.emit()
+
+
+func _rival_name(color: Color) -> String:
+	if color == Color(0.88, 0.18, 0.18): return "Red"
+	if color == Color(0.92, 0.55, 0.08): return "Orange"
+	if color == Color(0.65, 0.18, 0.85): return "Violet"
+	return "???"

@@ -11,6 +11,7 @@ var _errors: PackedStringArray = []
 var _test_files: PackedStringArray = [
 	"res://tests/test_grid.gd",
 	"res://tests/test_rivals.gd",
+	"res://tests/test_zones.gd",
 	"res://tests/test_trees.gd",
 	"res://tests/test_save.gd",
 	"res://tests/test_input.gd",

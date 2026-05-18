@@ -24,6 +24,13 @@ const TRADE_COOLDOWN: float = 4.0
 const MAX_TRADES_PER_TREE: int = 6
 const REGEN_INTERVAL: float = 60.0
 
+# ── Zone difficulty ────────────────────────────────────────
+const ZONE_COST_BORDER: float = 3.0
+const ZONE_COST_CENTER: float = 5.0
+const ZONE_COST_NEAR_RIVAL: float = 7.0
+const ZONE_BORDER_DIST: int = 3
+const ZONE_RIVAL_DIST: int = 5
+
 const DIRS_4: Array[Vector2i] = [
 	Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)
 ]
@@ -153,6 +160,41 @@ func _place_player() -> void:
 	grid[sy][sx] = CellType.MYCELIUM
 
 # ═══════════════════════════════════════════════════════════════
+# ZONE DETECTION
+# ═══════════════════════════════════════════════════════════════
+
+func get_cell_zone(pos: Vector2i) -> String:
+	"""Return zone classification: border, near_rival, or center."""
+	# Border check (edges of the map — easy growth)
+	if pos.x < ZONE_BORDER_DIST or pos.x >= GRID_W - ZONE_BORDER_DIST:
+		return "border"
+	if pos.y < ZONE_BORDER_DIST or pos.y >= GRID_H - ZONE_BORDER_DIST:
+		return "border"
+	# Near rivals check (highest priority — hostile growth)
+	var am = get_node_or_null("/root/AIManager")
+	if am:
+		for rival: Dictionary in am.rivals:
+			for rc: Vector2i in rival["cells"]:
+				if abs(pos.x - rc.x) <= ZONE_RIVAL_DIST and abs(pos.y - rc.y) <= ZONE_RIVAL_DIST:
+					return "near_rival"
+	return "center"
+
+
+func get_growth_cost(pos: Vector2i) -> float:
+	match get_cell_zone(pos):
+		"border": return ZONE_COST_BORDER
+		"near_rival": return ZONE_COST_NEAR_RIVAL
+		_: return ZONE_COST_CENTER
+
+
+func get_zone_tint(pos: Vector2i) -> Color:
+	"""Return a subtle tint color for zone visualization."""
+	match get_cell_zone(pos):
+		"border": return Color(0.0, 1.0, 0.0, 0.12)      # Green = easy
+		"near_rival": return Color(1.0, 0.15, 0.15, 0.18)  # Red = hostile
+		_: return Color(1.0, 1.0, 0.0, 0.06)              # Yellow = normal
+
+# ═══════════════════════════════════════════════════════════════
 # GROWTH
 # ═══════════════════════════════════════════════════════════════
 
@@ -174,6 +216,9 @@ func try_grow() -> void:
 	if growth_candidates.is_empty():
 		return
 	var chosen: Vector2i = growth_candidates[randi() % growth_candidates.size()]
+	var cost: float = get_growth_cost(chosen)
+	if player_gp < cost: return
+	player_gp -= cost
 	_set_cell(chosen, CellType.MYCELIUM)
 	player_cells.append(chosen)
 	_add_pulse(chosen, Color(0.25, 0.75, 0.35), "grow")
@@ -193,8 +238,9 @@ func try_player_grow_to(target: Vector2i) -> bool:
 			adjacent = true
 			break
 	if not adjacent: return false
-	if player_gp < GROWTH_COST: return false
-	player_gp -= GROWTH_COST
+	var cost: float = get_growth_cost(target)
+	if player_gp < cost: return false
+	player_gp -= cost
 	_set_cell(target, CellType.MYCELIUM)
 	player_cells.append(target)
 	_add_pulse(target, Color(0.25, 0.75, 0.35), "grow")

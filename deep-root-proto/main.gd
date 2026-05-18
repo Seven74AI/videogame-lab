@@ -21,7 +21,7 @@ func _process(delta: float) -> void:
 	# GP accrual
 	gm.player_gp += gm.player_gp_rate * delta
 
-	# Growth progress
+	# Growth progress (auto-grow timer — uses base GROWTH_COST as timing)
 	gm.player_growth_progress += gm.player_gp_rate * delta
 	if gm.player_growth_progress >= gm.GROWTH_COST:
 		gm.player_growth_progress -= gm.GROWTH_COST
@@ -122,6 +122,9 @@ func _update_hover() -> void:
 
 
 func _draw() -> void:
+	# ── Zone difficulty tints: persistent overlay on all empty cells ──
+	_draw_zone_tints()
+
 	if hover_cell.x < 0: return
 	var gm: GameManager = GameManager
 	var rect := Rect2(
@@ -133,5 +136,60 @@ func _draw() -> void:
 	# Lighter fill for empty cells (clickable)
 	if gm.grid[hover_cell.y][hover_cell.x] == gm.CellType.EMPTY:
 		draw_rect(rect, Color(1.0, 1.0, 1.0, 0.15))
+		# ── Tooltip: zone name + GP cost ──
+		var zone: String = gm.get_cell_zone(hover_cell)
+		var cost: float = gm.get_growth_cost(hover_cell)
+		var zone_name: String = "Center (normal)"
+		match zone:
+			"border": zone_name = "Border (easy)"
+			"near_rival": zone_name = "Near rival (hostile)"
+		var text: String = "%s  |  Cost: %.0f GP" % [zone_name, cost]
+
+		var font_size: int = 11
+		var txt_x: float = rect.position.x + 4
+		var txt_y: float = rect.position.y - 2  # tooltip above cell
+		if txt_y < font_size + 6:
+			txt_y = rect.position.y + rect.size.y + 2  # below if near top edge
+
+		# Tooltip background
+		var font: Font = ThemeDB.fallback_font
+		var txt_size: Vector2 = font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size)
+		var bg_rect := Rect2(txt_x - 2, txt_y - 2, txt_size.x + 8, txt_size.y + 6)
+		draw_rect(bg_rect, Color(0.05, 0.05, 0.08, 0.88), true)
+		draw_rect(bg_rect, Color(0.3, 0.3, 0.4, 0.7), false, 1.0)
+
+		# Tooltip text — position so baseline is inside bg
+		draw_string(font, Vector2(txt_x + 2, txt_y - 2 + font_size + 2), text,
+			HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color.WHITE)
 	elif gm.grid[hover_cell.y][hover_cell.x] == gm.CellType.TREE:
 		draw_rect(rect, Color(0.95, 0.80, 0.25, 0.2))
+
+
+func _draw_zone_tints() -> void:
+	"""Draw zone difficulty tints on all empty cells (persistent overlay)."""
+	var gm: GameManager = GameManager
+	if gm == null: return
+
+	# Batch by zone color to minimize state changes
+	var border_rects: Array[Rect2] = []
+	var center_rects: Array[Rect2] = []
+	var rival_rects: Array[Rect2] = []
+
+	for y: int in range(gm.GRID_H):
+		for x: int in range(gm.GRID_W):
+			if gm.grid[y][x] != gm.CellType.EMPTY:
+				continue
+			var pos := Vector2i(x, y)
+			var zone: String = gm.get_cell_zone(pos)
+			var r := Rect2(x * gm.CELL_SIZE, y * gm.CELL_SIZE, gm.CELL_SIZE, gm.CELL_SIZE)
+			match zone:
+				"border": border_rects.append(r)
+				"near_rival": rival_rects.append(r)
+				_: center_rects.append(r)
+
+	for r: Rect2 in center_rects:
+		draw_rect(r, Color(1.0, 1.0, 0.0, 0.06), true)
+	for r: Rect2 in border_rects:
+		draw_rect(r, Color(0.0, 1.0, 0.0, 0.12), true)
+	for r: Rect2 in rival_rects:
+		draw_rect(r, Color(1.0, 0.15, 0.15, 0.18), true)

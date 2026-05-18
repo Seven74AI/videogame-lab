@@ -39,8 +39,13 @@ func _refresh() -> void:
 		"Cells: %d  Absorbed: %d" % [gm.player_cells.size(), gm.player_absorbed]
 	)
 
+	var ai_mgr = gm.get_node_or_null("/root/AIManager")
+	if ai_mgr == null:
+		_rivals_label.text = ""
+		return
+
 	var rival_text: String = "── Rivals ──\n"
-	for rival: Dictionary in gm.get_node_or_null("/root/AIManager").rivals:
+	for rival: Dictionary in ai_mgr.rivals:
 		var name: String = ""
 		match rival["personality"]:
 			"aggressive": name = "Red"

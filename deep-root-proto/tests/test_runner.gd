@@ -125,6 +125,19 @@ func assert_ge(actual, minimum, msg: String = "") -> bool:
 	return false
 
 
+func assert_le(actual, maximum, msg: String = "") -> bool:
+	if actual <= maximum:
+		_passed += 1
+		return true
+	_failed += 1
+	var err: String = "  expected <= %s, got %s" % [str(maximum), str(actual)]
+	if msg != "":
+		err += " | " + msg
+	_errors.append(err)
+	printerr("  FAIL: ", err)
+	return false
+
+
 func assert_not_null(obj, msg: String = "") -> bool:
 	if obj != null:
 		_passed += 1

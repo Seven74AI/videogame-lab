@@ -36,6 +36,9 @@ func _process(delta: float) -> void:
 			am.rival_grow(i)
 			am.rival_timers[i] = am.rival_intervals[i]
 
+	# Rival phase cycles
+	am.update_rival_phases(delta)
+
 	# Animations
 	gm.update_animations(delta)
 

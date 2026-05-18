@@ -30,6 +30,9 @@ extends Resource
 @export var rival_cells_data: Array[Array] = []  # Array of Array[Vector2i]
 @export var rival_absorbed: Array[int] = []
 @export var rival_personalities: Array[String] = []
+@export var rival_phases: Array[String] = []
+@export var rival_phase_idxs: Array[int] = []
+@export var rival_phase_timers: Array[float] = []
 
 
 static func save_path() -> String:
@@ -69,6 +72,9 @@ static func create_from_game() -> SaveGame:
 			sg.rival_cells_data.append(rival["cells"].duplicate(true))
 			sg.rival_absorbed.append(rival["absorbed"])
 			sg.rival_personalities.append(rival["personality"])
+			sg.rival_phases.append(rival.get("phase", rival["personality"]))
+			sg.rival_phase_idxs.append(rival.get("phase_idx", 0))
+			sg.rival_phase_timers.append(rival.get("phase_timer", 8.0))
 
 	return sg
 
@@ -104,6 +110,12 @@ func apply_to_game() -> bool:
 		for i: int in range(am.rivals.size()):
 			am.rivals[i]["cells"] = rival_cells_data[i].duplicate(true)
 			am.rivals[i]["absorbed"] = rival_absorbed[i]
+			if i < rival_phases.size():
+				am.rivals[i]["phase"] = rival_phases[i]
+			if i < rival_phase_idxs.size():
+				am.rivals[i]["phase_idx"] = rival_phase_idxs[i]
+			if i < rival_phase_timers.size():
+				am.rivals[i]["phase_timer"] = rival_phase_timers[i]
 
 	gm.state_changed.emit()
 	return true

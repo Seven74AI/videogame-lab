@@ -2,6 +2,7 @@
 # grid_layer.gd — GridLayer scene script (Godot 4.2 TileMap)
 # Uses TileMap for grid rendering (replaces _draw() grid)
 # Perf x10 on 60x40 vs per-cell draw_rect/draw_circle
+# Phase overlay: draws pulse highlight on rivals in special phases
 # ═══════════════════════════════════════════════════════════════
 extends Node2D
 
@@ -11,6 +12,7 @@ const CELL_SIZE: int = 24
 const NUM_CELL_TYPES: int = 9
 
 var _tileset_ready: bool = false
+var _phase_pulse_time: float = 0.0
 
 
 func _ready() -> void:
@@ -59,9 +61,11 @@ func _setup_tileset() -> void:
 	_tilemap.tile_set = ts
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	if not _tileset_ready: return
+	_phase_pulse_time += delta
 	_refresh_tiles()
+	queue_redraw()
 
 
 func _refresh_tiles() -> void:
@@ -74,3 +78,27 @@ func _refresh_tiles() -> void:
 			var ct: int = gm.grid[y][x]
 			if ct == 0: continue
 			_tilemap.set_cell(0, Vector2i(x, y), 0, Vector2i(ct, 0))
+
+
+func _draw() -> void:
+	"""Draw phase pulse overlays on rival cells in special phases."""
+	var am = get_node_or_null("/root/AIManager")
+	if am == null: return
+
+	for rival: Dictionary in am.rivals:
+		var phase: String = rival["phase"]
+		var pulse_color: Color = am.get_phase_pulse_color(phase)
+		if pulse_color.a <= 0:
+			continue  # Normal phase, no overlay
+
+		# Pulsing alpha: oscillate between 0.15 and 0.50
+		var alpha: float = 0.15 + sin(_phase_pulse_time * 3.0) * 0.175 + 0.175
+		var draw_color: Color = pulse_color
+		draw_color.a = alpha
+
+		for cell: Vector2i in rival["cells"]:
+			var rect := Rect2(cell.x * CELL_SIZE, cell.y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
+			# Draw filled overlay with pulsing alpha
+			draw_rect(rect, draw_color)
+			# Draw border
+			draw_rect(rect, Color(draw_color.r, draw_color.g, draw_color.b, minf(alpha + 0.2, 0.8)), false, 1.0)

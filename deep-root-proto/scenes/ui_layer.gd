@@ -46,7 +46,11 @@ func _refresh() -> void:
 			"aggressive": name = "Red"
 			"defensive": name = "Orange"
 			"opportunistic": name = "Violet"
-		rival_text += "  %s: %d cells, %d absorbed\n" % [name, rival["cells"].size(), rival["absorbed"]]
+		var phase: String = rival.get("phase", rival["personality"])
+		var phase_display: String = ""
+		if phase != rival["personality"]:
+			phase_display = " [%s]" % phase.capitalize()
+		rival_text += "  %s%s: %d cells, %d absorbed\n" % [name, phase_display, rival["cells"].size(), rival["absorbed"]]
 	_rivals_label.text = rival_text
 
 	var tree_text: String = "── Trees ──\n"

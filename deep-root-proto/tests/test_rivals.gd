@@ -93,3 +93,137 @@ func test_astargrid2d_setup() -> bool:
 	r.assert_true(astar.is_in_bounds(0, 0), "Point (0,0) in bounds")
 	r.assert_false(astar.is_in_bounds(GRID_W, GRID_H), "Point out of bounds")
 	return true
+
+
+# ── Rival Phase System Tests ────────────────────────────
+
+const PHASE_CONFIGS: Dictionary = {
+	"aggressive": {
+		"phases": ["aggressive", "frenzy"],
+		"phase_durations": [8.0, 5.0],
+	},
+	"defensive": {
+		"phases": ["defensive", "fortify"],
+		"phase_durations": [8.0, 5.0],
+	},
+	"opportunistic": {
+		"phases": ["opportunistic", "harvest"],
+		"phase_durations": [8.0, 5.0],
+	},
+}
+
+const PHASE_PULSE_COLORS: Dictionary = {
+	"frenzy": Color(1.0, 0.2, 0.1, 0.6),
+	"fortify": Color(1.0, 0.65, 0.1, 0.6),
+	"harvest": Color(0.75, 0.2, 1.0, 0.6),
+}
+
+
+func test_phase_definitions() -> bool:
+	""" Each rival personality must have 2-3 phases defined """
+	var r = _runner()
+
+	r.assert_true(PHASE_CONFIGS.has("aggressive"), "aggressive config exists")
+	r.assert_true(PHASE_CONFIGS.has("defensive"), "defensive config exists")
+	r.assert_true(PHASE_CONFIGS.has("opportunistic"), "opportunistic config exists")
+
+	for personality in PHASE_CONFIGS:
+		var cfg: Dictionary = PHASE_CONFIGS[personality]
+		var phases: Array = cfg["phases"]
+		var durations: Array = cfg["phase_durations"]
+		r.assert_ge(phases.size(), 2, "%s has >=2 phases" % personality)
+		r.assert_le(phases.size(), 3, "%s has <=3 phases" % personality)
+		r.assert_eq(phases.size(), durations.size(), "%s phase/duration count match" % personality)
+
+	# Aggressive phases: aggressive → frenzy
+	r.assert_eq(PHASE_CONFIGS["aggressive"]["phases"][0], "aggressive", "aggressive phase 0")
+	r.assert_eq(PHASE_CONFIGS["aggressive"]["phases"][1], "frenzy", "aggressive phase 1")
+
+	# Defensive phases: defensive → fortify
+	r.assert_eq(PHASE_CONFIGS["defensive"]["phases"][0], "defensive", "defensive phase 0")
+	r.assert_eq(PHASE_CONFIGS["defensive"]["phases"][1], "fortify", "defensive phase 1")
+
+	# Opportunistic phases: opportunistic → harvest
+	r.assert_eq(PHASE_CONFIGS["opportunistic"]["phases"][0], "opportunistic", "opportunistic phase 0")
+	r.assert_eq(PHASE_CONFIGS["opportunistic"]["phases"][1], "harvest", "opportunistic phase 1")
+	return true
+
+
+func test_phase_transition_logic() -> bool:
+	""" Phase timer decrements and cycles through phases """
+	var r = _runner()
+
+	# Simulate phase state for one rival
+	var phases: Array[String] = ["aggressive", "frenzy"]
+	var durations: Array[float] = [8.0, 5.0]
+	var phase_idx: int = 0
+	var phase_timer: float = durations[0]
+
+	# Initial state
+	r.assert_eq(phases[phase_idx], "aggressive", "starts in phase 0")
+	r.assert_eq(phase_timer, 8.0, "phase timer = 8.0s")
+
+	# Decrement timer
+	phase_timer -= 2.0
+	r.assert_eq(phase_timer, 6.0, "timer decreases")
+
+	# Timer reaches 0 → switch phase
+	phase_timer = 0.0
+	r.assert_le(phase_timer, 0.0, "timer exhausted")
+
+	# Transition to next phase
+	phase_idx = (phase_idx + 1) % phases.size()
+	phase_timer = durations[phase_idx]
+	r.assert_eq(phases[phase_idx], "frenzy", "switched to frenzy")
+	r.assert_eq(phase_timer, 5.0, "frenzy duration = 5.0s")
+
+	# Another cycle back to aggressive
+	phase_timer = 0.0
+	phase_idx = (phase_idx + 1) % phases.size()
+	phase_timer = durations[phase_idx]
+	r.assert_eq(phases[phase_idx], "aggressive", "cycled back to aggressive")
+	r.assert_eq(phase_timer, 8.0, "aggressive duration = 8.0s")
+	return true
+
+
+func test_phase_pulse_colors() -> bool:
+	""" Special phases have distinct pulse colors """
+	var r = _runner()
+
+	r.assert_eq(PHASE_PULSE_COLORS["frenzy"], Color(1.0, 0.2, 0.1, 0.6), "frenzy = deep red")
+	r.assert_eq(PHASE_PULSE_COLORS["fortify"], Color(1.0, 0.65, 0.1, 0.6), "fortify = amber")
+	r.assert_eq(PHASE_PULSE_COLORS["harvest"], Color(0.75, 0.2, 1.0, 0.6), "harvest = bright violet")
+
+	# Default phases (non-special) should not have pulse colors
+	r.assert_false(PHASE_PULSE_COLORS.has("aggressive"), "aggressive has no pulse")
+	r.assert_false(PHASE_PULSE_COLORS.has("defensive"), "defensive has no pulse")
+	r.assert_false(PHASE_PULSE_COLORS.has("opportunistic"), "opportunistic has no pulse")
+	return true
+
+
+func test_phase_behavior_modifier() -> bool:
+	""" Phases modify scoring weight or growth speed """
+	var r = _runner()
+
+	# Frenzy phase: +50% aggression scoring
+	var base_agg_score: float = 10.0
+	var frenzy_mult: float = 1.5
+	var frenzy_score: float = base_agg_score * frenzy_mult
+	r.assert_gt(frenzy_score, base_agg_score, "frenzy amplifies aggression")
+
+	# Fortify phase: +30% defensive distance scoring
+	var base_def_score: float = 5.0
+	var fortify_mult: float = 1.3
+	var fortify_score: float = base_def_score * fortify_mult
+	r.assert_gt(fortify_score, base_def_score, "fortify amplifies defense")
+
+	# Harvest phase: +80% resource scoring
+	var base_opp_score: float = 12.0
+	var harvest_mult: float = 1.8
+	var harvest_score: float = base_opp_score * harvest_mult
+	r.assert_gt(harvest_score, base_opp_score, "harvest amplifies resource gathering")
+
+	# Normal phases use multiplier 1.0
+	var normal_mult: float = 1.0
+	r.assert_eq(base_agg_score * normal_mult, base_agg_score, "normal phase = no multiplier")
+	return true

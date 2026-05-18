@@ -31,8 +31,6 @@ func _ready() -> void:
 		test_node.set_script(scr)
 		test_node.name = scr.resource_path.get_file().get_basename()
 		add_child(test_node)
-		# Wait for _ready on child if any
-		await get_tree().process_frame
 		_run_tests_on(test_node)
 
 	print("")

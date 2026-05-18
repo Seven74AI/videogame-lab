@@ -67,11 +67,9 @@ func _setup_astar() -> void:
 	_astar = AStarGrid2D.new()
 	var gm = get_node_or_null("/root/GameManager")
 	if gm == null: return
-	# Godot 4.2: region is the canonical API but can fail to
-	# initialize the internal grid for set_point_solid before update().
-	# size is deprecated but ensures the grid is sized before update().
+	# Godot 4.2+: region is the canonical API for AStarGrid2D size.
+	# size property is deprecated — removed in 4.2.2+.
 	_astar.region = Rect2i(0, 0, gm.GRID_W, gm.GRID_H)
-	_astar.size = Vector2i(gm.GRID_W, gm.GRID_H)
 	_astar.default_compute_heuristic = AStarGrid2D.HEURISTIC_MANHATTAN
 	_astar.diagonal_mode = AStarGrid2D.DIAGONAL_MODE_NEVER
 	_astar.update()

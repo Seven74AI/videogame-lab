@@ -159,6 +159,7 @@ func test_click_far_cell_fails() -> bool:
 	_runner.assert_true(false, "no far empty cell found")
 	return false
 
+
 # ── Tree regen integration ─────────────────────────────────
 
 func test_trees_have_regen_timer() -> bool:
@@ -194,4 +195,167 @@ func test_tree_regen_functional() -> bool:
 	for ti in range(gm.trees.size()):
 		var tree = gm.trees[ti]
 		_runner.assert_eq(tree["trades_left"], 1, "tree %d should regen to 1 after depletion" % ti)
+	return true
+
+
+# ═══════════════════════════════════════════════════════════════
+# Deep Root Pulse integration tests
+# ═══════════════════════════════════════════════════════════════
+
+func test_pulse_exhausted_tree_regens() -> bool:
+	setup()
+	var gm = GameManager
+
+	# Exhaust a tree
+	gm.trees[0]["trades_left"] = 0
+	gm.player_gp = 20.0
+
+	var before_trades: int = gm.trees[0]["trades_left"]
+	gm.deep_root_pulse(0)
+
+	_runner.assert_eq(gm.player_gp, 5.0, "GP: 20 - 15 = 5 after pulse")
+	_runner.assert_eq(gm.trees[0]["trades_left"], 3, "Trades regenerated to 3")
+	_runner.assert_ne(before_trades, gm.trees[0]["trades_left"], "Trades changed from 0")
+	return true
+
+
+func test_pulse_blocked_if_tree_has_trades() -> bool:
+	setup()
+	var gm = GameManager
+	gm.trees[0]["trades_left"] = 2
+	gm.player_gp = 20.0
+	var gp_before: float = gm.player_gp
+	var trades_before: int = gm.trees[0]["trades_left"]
+
+	gm.deep_root_pulse(0)
+
+	_runner.assert_eq(gm.player_gp, gp_before, "GP unchanged when pulse blocked")
+	_runner.assert_eq(gm.trees[0]["trades_left"], trades_before, "Trades unchanged")
+	return true
+
+
+func test_pulse_blocked_insufficient_gp() -> bool:
+	setup()
+	var gm = GameManager
+	gm.trees[0]["trades_left"] = 0
+	gm.player_gp = 5.0
+	var gp_before: float = gm.player_gp
+
+	gm.deep_root_pulse(0)
+
+	_runner.assert_eq(gm.player_gp, gp_before, "GP unchanged when can't afford")
+	_runner.assert_eq(gm.trees[0]["trades_left"], 0, "Trades still 0")
+	return true
+
+
+# ═══════════════════════════════════════════════════════════════
+# Tree Linking integration tests
+# ═══════════════════════════════════════════════════════════════
+
+func test_link_two_exhausted_trees() -> bool:
+	setup()
+	var gm = GameManager
+
+	# Exhaust both trees
+	gm.trees[0]["trades_left"] = 0
+	gm.trees[1]["trades_left"] = 0
+
+	gm.link_trees(0, 1)
+
+	_runner.assert_eq(gm.trees[0]["linked_to"], 1, "Tree 0 linked to 1")
+	_runner.assert_eq(gm.trees[1]["linked_to"], 0, "Tree 1 linked to 0")
+	_runner.assert_eq(gm.trees[0]["trades_left"], 6, "Tree 0: +6 trades")
+	_runner.assert_eq(gm.trees[1]["trades_left"], 6, "Tree 1: +6 trades")
+	_runner.assert_eq(gm.link_mode, -1, "Link mode cleared after linking")
+	return true
+
+
+func test_link_blocked_self_link() -> bool:
+	setup()
+	var gm = GameManager
+	gm.trees[0]["trades_left"] = 0
+
+	gm.link_trees(0, 0)
+
+	_runner.assert_eq(gm.trees[0]["linked_to"], -1, "Tree not linked to itself")
+	_runner.assert_eq(gm.link_mode, -1, "Link mode cleared")
+	return true
+
+
+func test_link_blocked_already_linked() -> bool:
+	setup()
+	var gm = GameManager
+	gm.trees[0]["trades_left"] = 0
+	gm.trees[1]["trades_left"] = 0
+	gm.trees[2]["trades_left"] = 0
+
+	# First link: 0 ↔ 1
+	gm.link_trees(0, 1)
+	_runner.assert_eq(gm.trees[0]["linked_to"], 1, "First link OK")
+
+	# Try linking 0 to 2 (0 is already linked)
+	gm.link_trees(0, 2)
+	_runner.assert_eq(gm.trees[0]["linked_to"], 1, "Still linked to 1, not 2")
+	_runner.assert_eq(gm.trees[2]["linked_to"], -1, "Tree 2 still unlinked")
+	return true
+
+
+func test_unlink_removes_bonus_capped() -> bool:
+	setup()
+	var gm = GameManager
+	gm.trees[0]["trades_left"] = 0
+	gm.trees[1]["trades_left"] = 0
+
+	# Link them
+	gm.link_trees(0, 1)
+
+	# Use some trades on tree 0
+	gm.trees[0]["trades_left"] = 8  # Simulate using some
+	gm.trees[1]["trades_left"] = 2  # Used most of them
+
+	gm.unlink_trees(0)
+
+	_runner.assert_eq(gm.trees[0]["linked_to"], -1, "Tree 0 unlinked")
+	_runner.assert_eq(gm.trees[1]["linked_to"], -1, "Tree 1 unlinked")
+	_runner.assert_eq(gm.trees[0]["trades_left"], 2, "Tree 0: 8-6=2 after unlink")
+	_runner.assert_eq(gm.trees[1]["trades_left"], 0, "Tree 1: 2-2=0 (capped) after unlink")
+	return true
+
+
+func test_unlink_not_linked_tree() -> bool:
+	setup()
+	var gm = GameManager
+	gm.trees[0]["linked_to"] = -1
+	gm.trees[0]["trades_left"] = 3
+	var trades_before: int = gm.trees[0]["trades_left"]
+
+	gm.unlink_trees(0)
+
+	_runner.assert_eq(gm.trees[0]["linked_to"], -1, "Still unlinked")
+	_runner.assert_eq(gm.trees[0]["trades_left"], trades_before, "Trades unchanged")
+	return true
+
+
+func test_link_mode_flow() -> bool:
+	setup()
+	var gm = GameManager
+	gm.trees[0]["trades_left"] = 0
+
+	_runner.assert_eq(gm.link_mode, -1, "Not in link mode initially")
+
+	gm.enter_link_mode(0)
+	_runner.assert_eq(gm.link_mode, 0, "In link mode for tree 0")
+
+	gm.cancel_link_mode()
+	_runner.assert_eq(gm.link_mode, -1, "Link mode cancelled")
+	return true
+
+
+func test_enter_link_mode_blocked_if_has_trades() -> bool:
+	setup()
+	var gm = GameManager
+	gm.trees[0]["trades_left"] = 3
+
+	gm.enter_link_mode(0)
+	_runner.assert_eq(gm.link_mode, -1, "Link mode not entered — tree has trades")
 	return true

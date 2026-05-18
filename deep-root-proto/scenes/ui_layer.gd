@@ -63,14 +63,27 @@ func _refresh() -> void:
 	for tree: Dictionary in gm.trees:
 		var marker: String = ">" if ti == gm.selected_tree_idx else " "
 		var regen_bar: String = ""
-		if tree["trades_left"] < gm.MAX_TRADES_PER_TREE:
+		if tree["trades_left"] < gm.MAX_TRADES_PER_TREE and tree.get("linked_to", -1) < 0:
 			regen_bar = _regen_bar(tree["regen_timer"], gm.REGEN_INTERVAL)
-		tree_text += "  %sT%d: %d/%d trades%s%s\n" % [
+		var link_info: String = ""
+		if tree.get("linked_to", -1) >= 0:
+			link_info = " ↔ T%d" % (tree["linked_to"] + 1)
+		var exhausted_info: String = ""
+		if tree["trades_left"] <= 0:
+			exhausted_info = " [DEPLETED]"
+		tree_text += "  %sT%d: %d/%d trades%s%s%s%s\n" % [
 			marker, ti + 1, tree["trades_left"], gm.MAX_TRADES_PER_TREE,
+			link_info,
 			regen_bar,
 			" (CD %.1fs)" % tree["cooldown"] if tree["cooldown"] > 0 else "",
+			exhausted_info,
 		]
 		ti += 1
+
+	# Link mode indicator
+	if gm.link_mode >= 0:
+		tree_text += "\n  ═══ LINK MODE: select target for T%d ═══\n" % (gm.link_mode + 1)
+
 	_trees_label.text = tree_text
 
 	var total_cells: int = gm.GRID_W * gm.GRID_H
@@ -85,7 +98,8 @@ func _refresh() -> void:
 
 	var ctrl_text: String = (
 		"Click: grow to cell  |  Arrows: grow direction  |  1/2/3: trade\n" +
-		"Click tree: select  |  Tab: cycle tree  |  R: reset"
+		"Click tree: select  |  Tab: cycle tree  |  G: pulse  |  L: link  |  U: unlink\n" +
+		"R: reset  |  Esc: cancel link"
 	)
 	_controls_label.text = ctrl_text
 

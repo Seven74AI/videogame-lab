@@ -24,6 +24,9 @@ const RIVAL_INTERVAL_MAX: float = 10.0
 const TRADE_COOLDOWN: float = 4.0
 const MAX_TRADES_PER_TREE: int = 6
 const REGEN_INTERVAL: float = 60.0
+const DEEP_ROOT_PULSE_COST: float = 15.0
+const DEEP_ROOT_PULSE_REGEN: int = 3
+const LINK_BONUS_TRADES: int = 6  # 2× base trades when linked
 
 # ── Zone difficulty ────────────────────────────────────────
 const ZONE_COST_BORDER: float = 3.0
@@ -71,6 +74,7 @@ var death_anims: Array[Dictionary] = []
 var seed_val: int = 0
 var growth_candidates: Array[Vector2i] = []
 var selected_tree_idx: int = -1
+var link_mode: int = -1  # -1 = no link in progress, N = tree idx waiting for link partner
 var message_text: String = ""
 var message_timer: float = 0.0
 var is_resetting: bool = false
@@ -170,6 +174,7 @@ func _place_trees() -> void:
 			"trades_left": MAX_TRADES_PER_TREE,
 			"cooldown": 0.0,
 			"regen_timer": REGEN_INTERVAL,
+			"linked_to": -1,
 		})
 
 
@@ -313,7 +318,7 @@ func trade(rate_idx: int) -> void:
 		message_timer = 2.0
 		return
 	if tree["trades_left"] <= 0:
-		message_text = "Tree depleted! All 6 trades used."
+		message_text = "Tree depleted! All trades used."
 		message_timer = 2.0
 		return
 	if tree["cooldown"] > 0:
@@ -376,6 +381,119 @@ func _find_trade_tree() -> Dictionary:
 				nearest_dist = d
 				nearest = tree
 	return nearest
+
+# ═══════════════════════════════════════════════════════════════
+# DEEP ROOT PULSE — Regenerate trades on exhausted tree
+# ═══════════════════════════════════════════════════════════════
+
+func deep_root_pulse(tree_idx: int) -> void:
+	if tree_idx < 0 or tree_idx >= trees.size():
+		return
+	var tree: Dictionary = trees[tree_idx]
+	if tree["trades_left"] > 0:
+		message_text = "Tree still has trades! Pulse only works on exhausted trees."
+		message_timer = 2.0
+		return
+	if player_gp < DEEP_ROOT_PULSE_COST:
+		message_text = "Need %.0f GP for Deep Root Pulse (have %.1f)" % [DEEP_ROOT_PULSE_COST, player_gp]
+		message_timer = 2.0
+		return
+	player_gp -= DEEP_ROOT_PULSE_COST
+	tree["trades_left"] = DEEP_ROOT_PULSE_REGEN
+	_add_pulse(tree["pos"], Color(0.4, 0.9, 0.6), "pulse")
+	message_text = "Deep Root Pulse! Tree %d regenerated to %d trades." % [tree_idx + 1, DEEP_ROOT_PULSE_REGEN]
+	message_timer = 2.0
+	state_changed.emit()
+
+# ═══════════════════════════════════════════════════════════════
+# TREE LINKING — Connect 2 trees via mycelium to double trades
+# ═══════════════════════════════════════════════════════════════
+
+func enter_link_mode(tree_idx: int) -> void:
+	if tree_idx < 0 or tree_idx >= trees.size():
+		return
+	var tree: Dictionary = trees[tree_idx]
+	if tree["trades_left"] > 0:
+		message_text = "Tree still has trades! Link only available when exhausted."
+		message_timer = 2.0
+		return
+	if tree["linked_to"] >= 0:
+		message_text = "Tree %d already linked to Tree %d. Press U to unlink." % [tree_idx + 1, tree["linked_to"] + 1]
+		message_timer = 2.0
+		return
+	link_mode = tree_idx
+	message_text = "Link mode: select another tree to link with Tree %d (press L again or Esc to cancel)" % (tree_idx + 1)
+	message_timer = 3.0
+	state_changed.emit()
+
+
+func link_trees(tree_a_idx: int, tree_b_idx: int) -> void:
+	if tree_a_idx == tree_b_idx:
+		message_text = "Cannot link a tree to itself!"
+		message_timer = 2.0
+		link_mode = -1
+		return
+	if tree_a_idx < 0 or tree_a_idx >= trees.size() or tree_b_idx < 0 or tree_b_idx >= trees.size():
+		link_mode = -1
+		return
+	var tree_a: Dictionary = trees[tree_a_idx]
+	var tree_b: Dictionary = trees[tree_b_idx]
+
+	if tree_a["linked_to"] >= 0:
+		message_text = "Tree %d is already linked to Tree %d. Unlink first." % [tree_a_idx + 1, tree_a["linked_to"] + 1]
+		message_timer = 2.0
+		link_mode = -1
+		return
+	if tree_b["linked_to"] >= 0:
+		message_text = "Tree %d is already linked to Tree %d. Unlink first." % [tree_b_idx + 1, tree_b["linked_to"] + 1]
+		message_timer = 2.0
+		link_mode = -1
+		return
+
+	# Form the link
+	tree_a["linked_to"] = tree_b_idx
+	tree_b["linked_to"] = tree_a_idx
+	tree_a["trades_left"] += LINK_BONUS_TRADES
+	tree_b["trades_left"] += LINK_BONUS_TRADES
+
+	_add_pulse(tree_a["pos"], Color(0.6, 0.4, 0.95), "link")
+	_add_pulse(tree_b["pos"], Color(0.6, 0.4, 0.95), "link")
+	message_text = "Trees %d and %d linked via mycelium! +%d trades each." % [tree_a_idx + 1, tree_b_idx + 1, LINK_BONUS_TRADES]
+	message_timer = 2.0
+	link_mode = -1
+	state_changed.emit()
+
+
+func unlink_trees(tree_idx: int) -> void:
+	if tree_idx < 0 or tree_idx >= trees.size():
+		return
+	var tree: Dictionary = trees[tree_idx]
+	var partner_idx: int = tree["linked_to"]
+	if partner_idx < 0:
+		message_text = "Tree %d is not linked." % (tree_idx + 1)
+		message_timer = 2.0
+		return
+	var partner: Dictionary = trees[partner_idx]
+
+	# Remove bonus trades (cap at 0, don't go negative if already used)
+	var remove_a: int = min(tree["trades_left"], LINK_BONUS_TRADES)
+	var remove_b: int = min(partner["trades_left"], LINK_BONUS_TRADES)
+	tree["trades_left"] -= remove_a
+	partner["trades_left"] -= remove_b
+	tree["linked_to"] = -1
+	partner["linked_to"] = -1
+
+	message_text = "Unlinked Trees %d and %d." % [tree_idx + 1, partner_idx + 1]
+	message_timer = 2.0
+	state_changed.emit()
+
+
+func cancel_link_mode() -> void:
+	if link_mode >= 0:
+		message_text = "Link cancelled."
+		message_timer = 1.5
+		link_mode = -1
+		state_changed.emit()
 
 # ═══════════════════════════════════════════════════════════════
 # ANIMATIONS
@@ -483,6 +601,7 @@ func reset() -> void:
 	anim_pulses.clear()
 	death_anims.clear()
 	selected_tree_idx = -1
+	link_mode = -1
 	growth_candidates.clear()
 	game_over = false
 	game_over_reason = ""

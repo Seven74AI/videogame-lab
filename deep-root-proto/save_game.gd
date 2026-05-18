@@ -25,6 +25,7 @@ extends Resource
 # Tree state
 @export var tree_trades_left: Array[int] = []
 @export var tree_cooldowns: Array[float] = []
+@export var tree_linked_to: Array[int] = []
 
 # Rival state
 @export var rival_cells_data: Array[Array] = []  # Array of Array[Vector2i]
@@ -65,6 +66,7 @@ static func create_from_game() -> SaveGame:
 	for tree in gm.trees:
 		sg.tree_trades_left.append(tree["trades_left"])
 		sg.tree_cooldowns.append(tree["cooldown"])
+		sg.tree_linked_to.append(tree.get("linked_to", -1))
 
 	# Rivals
 	if am:
@@ -104,6 +106,8 @@ func apply_to_game() -> bool:
 		if i < tree_trades_left.size():
 			gm.trees[i]["trades_left"] = tree_trades_left[i]
 			gm.trees[i]["cooldown"] = tree_cooldowns[i]
+		if i < tree_linked_to.size():
+			gm.trees[i]["linked_to"] = tree_linked_to[i]
 
 	# Restore rivals
 	if am and am.rivals.size() == rival_cells_data.size():

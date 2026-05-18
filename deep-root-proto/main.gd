@@ -88,8 +88,8 @@ func _process(delta: float) -> void:
 		for tree: Dictionary in gm.trees:
 			if tree["cooldown"] > 0:
 				tree["cooldown"] -= delta
-			# Regen: only tick when trades_left < max
-			if tree["trades_left"] < gm.MAX_TRADES_PER_TREE:
+			# Regen: only tick when trades_left < max AND not linked (linked trees don't regen)
+			if tree["trades_left"] < gm.MAX_TRADES_PER_TREE and tree.get("linked_to", -1) < 0:
 				tree["regen_timer"] -= delta
 				if tree["regen_timer"] <= 0.0:
 					tree["trades_left"] += 1
@@ -129,9 +129,13 @@ func _input(event: InputEvent) -> void:
 				for ti: int in range(gm.trees.size()):
 					var tp: Vector2i = gm.trees[ti]["pos"]
 					if abs(cell.x - tp.x) <= 1 and abs(cell.y - tp.y) <= 1:
-						gm.selected_tree_idx = ti
-						gm.message_text = "Tree %d selected (%d trades left)" % [ti + 1, gm.trees[ti]["trades_left"]]
-						gm.message_timer = 2.0
+						if gm.link_mode >= 0:
+							# In link mode — clicking a tree attempts to link
+							gm.link_trees(gm.link_mode, ti)
+						else:
+							gm.selected_tree_idx = ti
+							gm.message_text = "Tree %d selected (%d trades left)" % [ti + 1, gm.trees[ti]["trades_left"]]
+							gm.message_timer = 2.0
 						break
 			elif ct == gm.CellType.EMPTY:
 				gm.try_player_grow_to(cell)
@@ -142,6 +146,43 @@ func _input(event: InputEvent) -> void:
 		gm.trade(1)
 	if Input.is_action_just_pressed("trade_3"):
 		gm.trade(2)
+
+	# ── Deep Root Pulse ──────────────────────────────────
+	if Input.is_action_just_pressed("pulse_tree"):
+		if gm.link_mode >= 0:
+			gm.cancel_link_mode()
+		elif gm.selected_tree_idx >= 0:
+			gm.deep_root_pulse(gm.selected_tree_idx)
+		else:
+			gm.message_text = "No tree selected! Click a tree first."
+			gm.message_timer = 2.0
+
+	# ── Tree Linking ─────────────────────────────────────
+	if Input.is_action_just_pressed("link_tree"):
+		if gm.link_mode >= 0:
+			# Already in link mode — pressing L again cancels
+			gm.cancel_link_mode()
+		elif gm.selected_tree_idx >= 0:
+			gm.enter_link_mode(gm.selected_tree_idx)
+		else:
+			gm.message_text = "No tree selected! Click a tree first."
+			gm.message_timer = 2.0
+
+	# ── Tree Unlinking ───────────────────────────────────
+	if Input.is_action_just_pressed("unlink_tree"):
+		if gm.link_mode >= 0:
+			gm.cancel_link_mode()
+		elif gm.selected_tree_idx >= 0:
+			gm.unlink_trees(gm.selected_tree_idx)
+		else:
+			gm.message_text = "No tree selected! Click a tree first."
+			gm.message_timer = 2.0
+
+	# ── Cancel link mode (Esc) ───────────────────────────
+	if Input.is_action_just_pressed("ui_cancel"):
+		if gm.link_mode >= 0:
+			gm.cancel_link_mode()
+			get_viewport().set_input_as_handled()
 
 	var grow_dir: Vector2i = Vector2i.ZERO
 	if Input.is_action_just_pressed("grow_right"):

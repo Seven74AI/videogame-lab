@@ -1,6 +1,5 @@
 # ═══════════════════════════════════════════════════════════════
-# test_trees.gd — Tests for tree trading system
-# TDD: These MUST fail before we implement the refactored trade system
+# test_trees.gd — Tests for tree trading, regen, pulse, and linking
 # ═══════════════════════════════════════════════════════════════
 extends Node
 
@@ -8,6 +7,10 @@ const GRID_W: int = 60
 const GRID_H: int = 40
 const MAX_TRADES_PER_TREE: int = 6
 const TRADE_COOLDOWN: float = 4.0
+const REGEN_INTERVAL: float = 60.0
+const DEEP_ROOT_PULSE_COST: float = 15.0
+const DEEP_ROOT_PULSE_REGEN: int = 3
+const LINK_BONUS_TRADES: int = 6
 
 const TRADE_RATES: Array[Dictionary] = [
 	{"minerals": 2, "sugars": 1},
@@ -20,6 +23,10 @@ func _runner():
 	return get_parent()
 
 
+# ═══════════════════════════════════════════════════════════════
+# Trade system tests
+# ═══════════════════════════════════════════════════════════════
+
 func test_trade_rates_exist() -> bool:
 	""" Trade system should have 3 tiered exchange rates """
 	var r = _runner()
@@ -30,13 +37,15 @@ func test_trade_rates_exist() -> bool:
 
 
 func test_tree_initialization() -> bool:
-	""" Each tree starts with MAX_TRADES_PER_TREE trades """
+	""" Each tree starts with MAX_TRADES_PER_TREE trades, linked_to=-1 """
 	var trees: Array[Dictionary] = []
 	for tp: Vector2i in [Vector2i(30, 20), Vector2i(6, 4), Vector2i(52, 34)]:
 		trees.append({
 			"pos": tp,
 			"trades_left": MAX_TRADES_PER_TREE,
 			"cooldown": 0.0,
+			"regen_timer": REGEN_INTERVAL,
+			"linked_to": -1,
 		})
 
 	var r = _runner()
@@ -44,12 +53,14 @@ func test_tree_initialization() -> bool:
 	for tree in trees:
 		r.assert_eq(tree["trades_left"], 6)
 		r.assert_eq(tree["cooldown"], 0.0)
+		r.assert_eq(tree["linked_to"], -1)
+		r.assert_eq(tree["regen_timer"], REGEN_INTERVAL)
 	return true
 
 
 func test_trade_depletes_tree() -> bool:
 	""" Trade should decrement trades_left and start cooldown """
-	var tree: Dictionary = {"pos": Vector2i(30, 20), "trades_left": 6, "cooldown": 0.0}
+	var tree: Dictionary = {"pos": Vector2i(30, 20), "trades_left": 6, "cooldown": 0.0, "regen_timer": 60.0, "linked_to": -1}
 	tree["trades_left"] -= 1
 	tree["cooldown"] = TRADE_COOLDOWN
 
@@ -89,9 +100,10 @@ func test_sugar_gp_boost() -> bool:
 	r.assert_gt(rate_5, rate_0, "More sugars = faster")
 	return true
 
-# ── Tree regen (1 trade / 60s) ─────────────────────────────
 
-const REGEN_INTERVAL: float = 60.0
+# ═══════════════════════════════════════════════════════════════
+# Tree regen tests (1 trade / 60s)
+# ═══════════════════════════════════════════════════════════════
 
 func test_tree_regen_timer_initialized() -> bool:
 	""" Each tree starts with a regen_timer set to REGEN_INTERVAL """
@@ -102,6 +114,7 @@ func test_tree_regen_timer_initialized() -> bool:
 			"trades_left": MAX_TRADES_PER_TREE,
 			"cooldown": 0.0,
 			"regen_timer": REGEN_INTERVAL,
+			"linked_to": -1,
 		})
 
 	var r = _runner()
@@ -119,6 +132,7 @@ func test_tree_regen_refills_trade() -> bool:
 		"trades_left": 3,
 		"cooldown": 0.0,
 		"regen_timer": 0.0,
+		"linked_to": -1,
 	}
 
 	# Simulate regen tick: timer expired, below max
@@ -139,9 +153,9 @@ func test_tree_regen_capped_at_max() -> bool:
 		"trades_left": MAX_TRADES_PER_TREE,
 		"cooldown": 0.0,
 		"regen_timer": 0.0,
+		"linked_to": -1,
 	}
 
-	# Simulate regen tick: at max, should NOT overflow
 	var before: int = tree["trades_left"]
 	if tree["regen_timer"] <= 0.0 and tree["trades_left"] < MAX_TRADES_PER_TREE:
 		tree["trades_left"] += 1
@@ -160,9 +174,9 @@ func test_tree_never_permanently_depleted() -> bool:
 		"trades_left": 0,
 		"cooldown": 0.0,
 		"regen_timer": 0.0,
+		"linked_to": -1,
 	}
 
-	# Simulate regen: depleted tree gets 1 trade back
 	if tree["regen_timer"] <= 0.0 and tree["trades_left"] < MAX_TRADES_PER_TREE:
 		tree["trades_left"] += 1
 		tree["regen_timer"] = REGEN_INTERVAL
@@ -181,10 +195,10 @@ func test_tree_regen_timer_ticks() -> bool:
 		"trades_left": 4,
 		"cooldown": 0.0,
 		"regen_timer": REGEN_INTERVAL,
+		"linked_to": -1,
 	}
 
 	var before: float = tree["regen_timer"]
-	# Simulate _process(delta) — only tick if below max
 	if tree["trades_left"] < MAX_TRADES_PER_TREE:
 		tree["regen_timer"] -= DELTA
 
@@ -202,13 +216,139 @@ func test_tree_regen_timer_pauses_at_max() -> bool:
 		"trades_left": MAX_TRADES_PER_TREE,
 		"cooldown": 0.0,
 		"regen_timer": REGEN_INTERVAL,
+		"linked_to": -1,
 	}
 
 	var before: float = tree["regen_timer"]
-	# Timer only ticks when below max
 	if tree["trades_left"] < MAX_TRADES_PER_TREE:
 		tree["regen_timer"] -= DELTA
 
 	var r = _runner()
 	r.assert_eq(tree["regen_timer"], before, "regen_timer should NOT tick when at max")
+	return true
+
+
+# ═══════════════════════════════════════════════════════════════
+# Deep Root Pulse tests
+# ═══════════════════════════════════════════════════════════════
+
+func test_pulse_regen_on_exhausted_tree() -> bool:
+	""" Deep Root Pulse costs 15 GP, regens 3 trades on exhausted tree """
+	var r = _runner()
+	var gp: float = 20.0
+	var tree: Dictionary = {"pos": Vector2i(30, 20), "trades_left": 0, "cooldown": 0.0, "regen_timer": 0.0, "linked_to": -1}
+
+	r.assert_eq(tree["trades_left"], 0, "Tree exhausted before pulse")
+
+	gp -= DEEP_ROOT_PULSE_COST
+	tree["trades_left"] = DEEP_ROOT_PULSE_REGEN
+
+	r.assert_eq(gp, 5.0, "GP: 20 - 15 = 5")
+	r.assert_eq(tree["trades_left"], 3, "3 trades regenerated after pulse")
+	return true
+
+
+func test_pulse_blocked_if_tree_has_trades() -> bool:
+	""" Pulse should be blocked when tree still has trades """
+	var r = _runner()
+	var tree: Dictionary = {"pos": Vector2i(30, 20), "trades_left": 2, "cooldown": 0.0, "regen_timer": 0.0, "linked_to": -1}
+	var can_pulse: bool = tree["trades_left"] <= 0
+
+	r.assert_false(can_pulse, "Pulse blocked when tree has trades")
+	return true
+
+
+func test_pulse_blocked_insufficient_gp() -> bool:
+	""" Pulse blocked if player has less than 15 GP """
+	var r = _runner()
+	var gp: float = 10.0
+	var can_afford: bool = gp >= DEEP_ROOT_PULSE_COST
+
+	r.assert_false(can_afford, "Pulse blocked when GP < 15")
+	return true
+
+
+func test_pulse_constants_correct() -> bool:
+	""" DEEP_ROOT_PULSE_COST = 15, DEEP_ROOT_PULSE_REGEN = 3 """
+	var r = _runner()
+	r.assert_eq(DEEP_ROOT_PULSE_COST, 15.0, "Pulse costs 15 GP")
+	r.assert_eq(DEEP_ROOT_PULSE_REGEN, 3, "Pulse regens 3 trades")
+	return true
+
+
+# ═══════════════════════════════════════════════════════════════
+# Tree Linking tests
+# ═══════════════════════════════════════════════════════════════
+
+func test_link_doubles_trades() -> bool:
+	""" Linking 2 exhausted trees doubles their trade capacity """
+	var r = _runner()
+	var tree_a: Dictionary = {"pos": Vector2i(30, 20), "trades_left": 0, "cooldown": 0.0, "regen_timer": 0.0, "linked_to": -1}
+	var tree_b: Dictionary = {"pos": Vector2i(6, 4), "trades_left": 0, "cooldown": 0.0, "regen_timer": 0.0, "linked_to": -1}
+
+	tree_a["linked_to"] = 1
+	tree_b["linked_to"] = 0
+	tree_a["trades_left"] += LINK_BONUS_TRADES
+	tree_b["trades_left"] += LINK_BONUS_TRADES
+
+	r.assert_eq(tree_a["linked_to"], 1, "Tree A linked to B")
+	r.assert_eq(tree_b["linked_to"], 0, "Tree B linked to A")
+	r.assert_eq(tree_a["trades_left"], 6, "Tree A: 0 + 6 = 6 trades after link")
+	r.assert_eq(tree_b["trades_left"], 6, "Tree B: 0 + 6 = 6 trades after link")
+	return true
+
+
+func test_link_blocked_if_already_linked() -> bool:
+	""" Cannot link a tree that is already linked """
+	var r = _runner()
+	var tree_a: Dictionary = {"pos": Vector2i(30, 20), "trades_left": 5, "cooldown": 0.0, "regen_timer": 0.0, "linked_to": 1}
+	var can_link: bool = tree_a["linked_to"] < 0
+
+	r.assert_false(can_link, "Cannot link an already-linked tree")
+	return true
+
+
+func test_link_blocked_if_has_trades() -> bool:
+	""" Link only available when tree is exhausted """
+	var r = _runner()
+	var tree: Dictionary = {"pos": Vector2i(30, 20), "trades_left": 3, "cooldown": 0.0, "regen_timer": 0.0, "linked_to": -1}
+	var can_link: bool = tree["trades_left"] <= 0
+
+	r.assert_false(can_link, "Link blocked when tree has trades")
+	return true
+
+
+func test_unlink_removes_bonus() -> bool:
+	""" Unlinking removes bonus trades (caps at 0) """
+	var r = _runner()
+	var tree_a: Dictionary = {"pos": Vector2i(30, 20), "trades_left": 8, "cooldown": 0.0, "regen_timer": 0.0, "linked_to": 1}
+	var tree_b: Dictionary = {"pos": Vector2i(6, 4), "trades_left": 2, "cooldown": 0.0, "regen_timer": 0.0, "linked_to": 0}
+
+	var remove_a: int = min(tree_a["trades_left"], LINK_BONUS_TRADES)
+	var remove_b: int = min(tree_b["trades_left"], LINK_BONUS_TRADES)
+	tree_a["trades_left"] -= remove_a
+	tree_b["trades_left"] -= remove_b
+	tree_a["linked_to"] = -1
+	tree_b["linked_to"] = -1
+
+	r.assert_eq(tree_a["trades_left"], 2, "Tree A: 8 - 6 = 2 trades after unlink")
+	r.assert_eq(tree_b["trades_left"], 0, "Tree B: 2 - 2 = 0 trades after unlink (capped)")
+	r.assert_eq(tree_a["linked_to"], -1, "Tree A unlinked")
+	r.assert_eq(tree_b["linked_to"], -1, "Tree B unlinked")
+	return true
+
+
+func test_link_bonus_constant() -> bool:
+	""" LINK_BONUS_TRADES should equal MAX_TRADES_PER_TREE (doubling) """
+	var r = _runner()
+	r.assert_eq(LINK_BONUS_TRADES, MAX_TRADES_PER_TREE, "Link bonus = base max trades")
+	r.assert_eq(LINK_BONUS_TRADES, 6, "Link bonus = 6")
+	return true
+
+
+func test_new_tree_starts_unlinked() -> bool:
+	""" New trees should start with linked_to = -1 """
+	var tree: Dictionary = {"pos": Vector2i(30, 20), "trades_left": 6, "cooldown": 0.0, "regen_timer": 60.0, "linked_to": -1}
+	var r = _runner()
+	r.assert_eq(tree["linked_to"], -1, "New tree starts unlinked")
 	return true

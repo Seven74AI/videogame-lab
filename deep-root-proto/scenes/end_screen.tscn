@@ -1,0 +1,52 @@
+[gd_scene load_steps=2 format=3 uid="uid://deeprootendscreen"]
+
+[ext_resource type="Script" path="res://scenes/end_screen.gd" id="1_es"]
+
+[node name="EndScreen" type="CanvasLayer"]
+script = ExtResource("1_es")
+
+[node name="BG" type="ColorRect" parent="."]
+offset_right = 1440.0
+offset_bottom = 960.0
+color = Color(0.0, 0.0, 0.0, 0.75)
+mouse_filter = 1
+
+[node name="VBox" type="VBoxContainer" parent="."]
+offset_left = 170.0
+offset_top = 60.0
+offset_right = 1270.0
+offset_bottom = 900.0
+
+[node name="Title" type="Label" parent="VBox"]
+text = "GAME OVER"
+modulate = Color(0.95, 0.25, 0.25, 1)
+mouse_filter = 1
+
+[node name="Reason" type="Label" parent="VBox"]
+text = ""
+modulate = Color(0.9, 0.9, 0.9, 1)
+mouse_filter = 1
+
+[node name="FinalStats" type="Label" parent="VBox"]
+text = ""
+modulate = Color(0.9, 0.9, 0.9, 1)
+mouse_filter = 1
+
+[node name="ProgressGraph" type="RichTextLabel" parent="VBox"]
+text = ""
+bbcode_enabled = true
+mouse_filter = 1
+custom_minimum_size = Vector2(800, 220)
+scroll_following = true
+
+[node name="RivalsCompare" type="Label" parent="VBox"]
+text = ""
+modulate = Color(0.9, 0.9, 0.9, 1)
+mouse_filter = 1
+
+[node name="Spacer" type="Control" parent="VBox"]
+custom_minimum_size = Vector2(0, 20)
+mouse_filter = 1
+
+[node name="ReplayBtn" type="Button" parent="VBox"]
+text = "▶  REPLAY"

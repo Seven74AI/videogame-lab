@@ -8,15 +8,27 @@ extends Node2D
 var mouse_pos: Vector2 = Vector2.ZERO
 var hover_cell: Vector2i = Vector2i(-1, -1)
 
+var _end_screen_scene: PackedScene = preload("res://scenes/end_screen.tscn")
+var _end_screen_instance: CanvasLayer = null
+
 
 func _ready() -> void:
 	GameManager.new_game()
 	AIManager.setup_rivals()
+	GameManager.game_ended.connect(_on_game_ended)
 
 
 func _process(delta: float) -> void:
 	var gm: GameManager = GameManager
 	var am: AIManager = AIManager
+
+	# History tracking (before any game-over check, so last frame is recorded)
+	gm.tick_history(delta)
+
+	# Check game over
+	gm.check_game_over()
+	if gm.game_over:
+		return
 
 	# GP accrual
 	gm.player_gp += gm.player_gp_rate * delta
@@ -63,6 +75,8 @@ func _process(delta: float) -> void:
 
 func _input(event: InputEvent) -> void:
 	var gm: GameManager = GameManager
+	if gm.game_over:
+		return
 
 	if event is InputEventMouseMotion:
 		mouse_pos = event.position
@@ -193,3 +207,16 @@ func _draw_zone_tints() -> void:
 		draw_rect(r, Color(0.0, 1.0, 0.0, 0.12), true)
 	for r: Rect2 in rival_rects:
 		draw_rect(r, Color(1.0, 0.15, 0.15, 0.18), true)
+
+
+func _on_game_ended(_reason: String) -> void:
+	if _end_screen_instance == null:
+		_end_screen_instance = _end_screen_scene.instantiate()
+		add_child(_end_screen_instance)
+	else:
+		# Re-show existing end screen on replay
+		_end_screen_instance.visible = true
+		# Re-trigger display update
+		var gm: GameManager = GameManager
+		if gm:
+			_end_screen_instance._on_game_ended(gm.game_over_reason)

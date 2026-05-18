@@ -72,10 +72,20 @@ var selected_tree_idx: int = -1
 var message_text: String = ""
 var message_timer: float = 0.0
 
+# ── History tracking ───────────────────────────────────────
+const HISTORY_INTERVAL: float = 2.0  # snapshot every 2 seconds
+var history_timer: float = 0.0
+var history: Array[Dictionary] = []  # [{t: float, player_cells: int, rivals: [int, int, int]}]
+
+# ── Game Over ──────────────────────────────────────────────
+var game_over: bool = false
+var game_over_reason: String = ""
+
 # ── Signals ────────────────────────────────────────────────
 signal state_changed
 signal show_message(msg: String)
 signal trade_completed(tree_idx: int, cost: int, gain: int)
+signal game_ended(reason: String)
 
 # ═══════════════════════════════════════════════════════════════
 # LIFECYCLE
@@ -90,6 +100,11 @@ func new_game() -> void:
 	_place_resources()
 	_place_trees()
 	_place_player()
+	game_over = false
+	game_over_reason = ""
+	history.clear()
+	history_timer = HISTORY_INTERVAL
+	_record_history_snapshot()
 	message_text = "Seed: %d — Grow with arrow keys, trade with 1/2/3, reset: R" % seed_val
 	state_changed.emit()
 
@@ -419,5 +434,72 @@ func reset() -> void:
 	anim_pulses.clear()
 	selected_tree_idx = -1
 	growth_candidates.clear()
+	game_over = false
+	game_over_reason = ""
+	history.clear()
+	history_timer = 0.0
 	state_changed.emit()
 	new_game()
+
+# ═══════════════════════════════════════════════════════════════
+# GAME OVER DETECTION
+# ═══════════════════════════════════════════════════════════════
+
+func is_grid_full() -> bool:
+	for y: int in range(GRID_H):
+		for x: int in range(GRID_W):
+			if grid[y][x] == CellType.EMPTY:
+				return false
+	return true
+
+func is_player_dead() -> bool:
+	return player_cells.is_empty() or not _has_growth_space()
+
+func _has_growth_space() -> bool:
+	update_growth_candidates()
+	return not growth_candidates.is_empty()
+
+func end_game(reason: String) -> void:
+	if game_over: return
+	game_over = true
+	game_over_reason = reason
+	# Take one final snapshot
+	_record_history_snapshot()
+	print("GAME OVER: ", reason)
+	game_ended.emit(reason)
+
+func check_game_over() -> void:
+	if game_over: return
+	if is_grid_full():
+		end_game("grid_full")
+	elif is_player_dead():
+		end_game("player_died")
+
+# ═══════════════════════════════════════════════════════════════
+# HISTORY TRACKING
+# ═══════════════════════════════════════════════════════════════
+
+func tick_history(delta: float) -> void:
+	if game_over: return
+	history_timer -= delta
+	if history_timer <= 0.0:
+		history_timer = HISTORY_INTERVAL
+		_record_history_snapshot()
+
+func _record_history_snapshot() -> void:
+	var am = get_node_or_null("/root/AIManager")
+	var rival_counts: Array[int] = [0, 0, 0]
+	var rival_absorbed: Array[int] = [0, 0, 0]
+	if am:
+		for i: int in range(min(am.rivals.size(), 3)):
+			rival_counts[i] = am.rivals[i]["cells"].size()
+			rival_absorbed[i] = am.rivals[i]["absorbed"]
+	history.append({
+		"t": Time.get_ticks_msec() / 1000.0 if Engine.get_process_frames() > 0 else 0.0,
+		"player_cells": player_cells.size(),
+		"player_gp": player_gp,
+		"player_absorbed": player_absorbed,
+		"player_sugars": player_sugars,
+		"rival_cells": rival_counts,
+		"rival_absorbed": rival_absorbed,
+	})

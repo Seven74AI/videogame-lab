@@ -109,3 +109,20 @@ func _update_hover() -> void:
 	hover_cell = gm.screen_to_cell(mouse_pos)
 	if hover_cell.x < 0 or hover_cell.x >= gm.GRID_W or hover_cell.y < 0 or hover_cell.y >= gm.GRID_H:
 		hover_cell = Vector2i(-1, -1)
+	queue_redraw()
+
+
+func _draw() -> void:
+	if hover_cell.x < 0: return
+	var gm: GameManager = GameManager
+	var rect := Rect2(
+		hover_cell.x * gm.CELL_SIZE, hover_cell.y * gm.CELL_SIZE,
+		gm.CELL_SIZE, gm.CELL_SIZE
+	)
+	# Highlight hover cell: semi-transparent white border
+	draw_rect(rect, Color.WHITE, false, 1.0)
+	# Lighter fill for empty cells (clickable)
+	if gm.grid[hover_cell.y][hover_cell.x] == gm.CellType.EMPTY:
+		draw_rect(rect, Color(1.0, 1.0, 1.0, 0.15))
+	elif gm.grid[hover_cell.y][hover_cell.x] == gm.CellType.TREE:
+		draw_rect(rect, Color(0.95, 0.80, 0.25, 0.2))

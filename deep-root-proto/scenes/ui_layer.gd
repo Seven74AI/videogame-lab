@@ -71,8 +71,8 @@ func _refresh() -> void:
 		_message_label.visible = false
 
 	var ctrl_text: String = (
-		"Arrows: grow  |  1/2/3: trade  |  Tab: cycle tree\n" +
-		"Click: grow to cell  |  Click tree: select  |  R: reset"
+		"Click: grow to cell  |  Arrows: grow direction  |  1/2/3: trade\n" +
+		"Click tree: select  |  Tab: cycle tree  |  R: reset"
 	)
 	_controls_label.text = ctrl_text
 

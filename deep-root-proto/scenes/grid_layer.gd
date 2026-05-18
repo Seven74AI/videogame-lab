@@ -20,6 +20,9 @@ func _ready() -> void:
 
 func _setup_tileset() -> void:
 	var ts := TileSet.new()
+	# CRITICAL: match tile_size to game CELL_SIZE, otherwise
+	# tiles render at default 16px spacing but game uses 24px cells
+	ts.tile_size = Vector2i(CELL_SIZE, CELL_SIZE)
 	var source := TileSetAtlasSource.new()
 	source.texture_region_size = Vector2i(CELL_SIZE, CELL_SIZE)
 

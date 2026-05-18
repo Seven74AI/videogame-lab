@@ -421,22 +421,22 @@ func _rival_grow(rival_idx: int) -> void:
 			"aggressive":
 				# Prefer cells near player mycelium or trees
 				for pc: Vector2i in player_cells:
-					var dist: float = cand.distance_to(pc)
+					var dist: float = Vector2(cand).distance_to(Vector2(pc))
 					score += 10.0 / (dist + 1.0)
 				for tree: Dictionary in trees:
 					var tp: Vector2i = tree["pos"]
-					var dist: float = cand.distance_to(tp)
+					var dist: float = Vector2(cand).distance_to(Vector2(tp))
 					score += 8.0 / (dist + 1.0)
 				score += grid_val * 5.0
 			"defensive":
 				# Maximize territory: prefer cells far from player and other rivals
 				var min_player_dist: float = 999.0
 				for pc: Vector2i in player_cells:
-					min_player_dist = minf(min_player_dist, cand.distance_to(pc))
+					min_player_dist = minf(min_player_dist, Vector2(cand).distance_to(Vector2(pc)))
 				score += min_player_dist * 0.5
 				# Prefer spreading out from own center
 				var center: Vector2i = cells[0]
-				score += cand.distance_to(center) * 0.3
+				score += Vector2(cand).distance_to(Vector2(center)) * 0.3
 				score += grid_val * 3.0
 			"opportunistic":
 				# Heavy sugar preference
@@ -540,7 +540,7 @@ func _find_trade_tree() -> Dictionary:
 					var tx: int = tp.x + dx
 					var ty: int = tp.y + dy
 					if tx >= 0 and tx < GRID_W and ty >= 0 and ty < GRID_H:
-						if pc.distance_to(Vector2i(tx, ty)) <= 1.5:
+						if Vector2(pc).distance_to(Vector2(tx, ty)) <= 1.5:
 							in_range.append(tree)
 							break
 				if in_range.has(tree):
@@ -562,7 +562,7 @@ func _find_trade_tree() -> Dictionary:
 	for tree: Dictionary in in_range:
 		var tp: Vector2i = tree["pos"]
 		for pc: Vector2i in player_cells:
-			var d: float = pc.distance_to(tp)
+			var d: float = Vector2(pc).distance_to(Vector2(tp))
 			if d < nearest_dist:
 				nearest_dist = d
 				nearest = tree
@@ -768,7 +768,7 @@ func _draw_player() -> void:
 		var cy: float = c.y * CELL_SIZE + CELL_SIZE / 2.0
 		var r: float = CELL_SIZE * 0.42
 		draw_circle(Vector2(cx, cy), r, COLOR_MYCELIUM)
-		draw_circle(Vector2(cx, cy), r, Color(0.2, 0.6, 0.3), false, 1.5)
+		draw_arc(Vector2(cx, cy), r, 0, TAU, 32, Color(0.2, 0.6, 0.3), 1.5)
 
 
 func _draw_rivals() -> void:
@@ -782,7 +782,7 @@ func _draw_rivals() -> void:
 			var cy: float = c.y * CELL_SIZE + CELL_SIZE / 2.0
 			var r: float = CELL_SIZE * 0.38
 			draw_circle(Vector2(cx, cy), r, color)
-			draw_circle(Vector2(cx, cy), r, color.darkened(0.3), false, 1.5)
+			draw_arc(Vector2(cx, cy), r, 0, TAU, 32, color.darkened(0.3), 1.5)
 
 
 func _draw_trees() -> void:
@@ -803,7 +803,7 @@ func _draw_trees() -> void:
 					if is_selected:
 						tree_color = COLOR_TREE.lightened(0.3)
 					draw_circle(Vector2(cx, cy), r, tree_color)
-					draw_circle(Vector2(cx, cy), r, Color(0.1, 0.35, 0.1), false, 2.0)
+					draw_arc(Vector2(cx, cy), r, 0, TAU, 32, Color(0.1, 0.35, 0.1), 2.0)
 
 		# Tree label
 		var label_x: float = (tp.x + 1) * CELL_SIZE
@@ -842,7 +842,7 @@ func _draw_animations() -> void:
 			"grow":
 				var r: float = CELL_SIZE * (0.1 + t * 1.2)
 				var alpha: float = 1.0 - t
-				draw_circle(Vector2(cx, cy), r, Color(color, alpha * 0.4), false, 2.0)
+				draw_arc(Vector2(cx, cy), r, 0, TAU, 32, Color(color, alpha * 0.4), 2.0)
 			"absorb":
 				var r: float = CELL_SIZE * (0.2 + t * 0.6)
 				var alpha: float = 1.0 - t
@@ -850,7 +850,7 @@ func _draw_animations() -> void:
 			"trade":
 				var r: float = CELL_SIZE * (0.3 + t * 1.5)
 				var alpha: float = 1.0 - t
-				draw_circle(Vector2(cx, cy), r, Color(color, alpha * 0.5), false, 2.5)
+				draw_arc(Vector2(cx, cy), r, 0, TAU, 32, Color(color, alpha * 0.5), 2.5)
 
 
 func _draw_hover() -> void:

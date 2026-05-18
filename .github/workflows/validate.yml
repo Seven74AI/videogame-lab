@@ -1,0 +1,55 @@
+# ═══════════════════════════════════════════════════════════════
+# validate.yml — Godot headless project validation CI
+# ═══════════════════════════════════════════════════════════════
+# Runs on every push to validate that the Godot project loads
+# without script errors, parse errors, or crashes.
+# ═══════════════════════════════════════════════════════════════
+
+name: Godot Headless Validation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'deep-root-proto/**'
+      - 'scripts/ci-validate.sh'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'deep-root-proto/**'
+      - 'scripts/ci-validate.sh'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Godot ${{ matrix.godot-version }} — Headless Check
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        godot-version: ['4.2.2']
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache Godot binary
+        id: cache-godot
+        uses: actions/cache@v4
+        with:
+          path: /usr/local/bin/godot4
+          key: godot-${{ matrix.godot-version }}-linux-x86_64
+
+      - name: Install Godot
+        if: steps.cache-godot.outputs.cache-hit != 'true'
+        run: |
+          GODOT_URL="https://github.com/godotengine/godot/releases/download/${{ matrix.godot-version }}-stable/Godot_v${{ matrix.godot-version }}-stable_linux.x86_64.zip"
+          curl -fsSL -o /tmp/godot.zip "$GODOT_URL"
+          unzip -o /tmp/godot.zip -d /tmp/godot
+          sudo mv /tmp/godot/Godot_v* /usr/local/bin/godot4
+          sudo chmod +x /usr/local/bin/godot4
+          godot4 --version
+
+      - name: Run headless validation
+        run: |
+          bash scripts/ci-validate.sh deep-root-proto/

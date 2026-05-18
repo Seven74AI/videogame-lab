@@ -22,6 +22,7 @@ const RIVAL_INTERVAL_MIN: float = 6.0
 const RIVAL_INTERVAL_MAX: float = 10.0
 const TRADE_COOLDOWN: float = 4.0
 const MAX_TRADES_PER_TREE: int = 6
+const REGEN_INTERVAL: float = 60.0
 
 const DIRS_4: Array[Vector2i] = [
 	Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)
@@ -140,6 +141,7 @@ func _place_trees() -> void:
 			"pos": tp,
 			"trades_left": MAX_TRADES_PER_TREE,
 			"cooldown": 0.0,
+			"regen_timer": REGEN_INTERVAL,
 		})
 
 

@@ -39,10 +39,16 @@ func _process(delta: float) -> void:
 	# Animations
 	gm.update_animations(delta)
 
-	# Tree cooldowns
+	# Tree cooldowns + regen
 	for tree: Dictionary in gm.trees:
 		if tree["cooldown"] > 0:
 			tree["cooldown"] -= delta
+		# Regen: only tick when trades_left < max
+		if tree["trades_left"] < gm.MAX_TRADES_PER_TREE:
+			tree["regen_timer"] -= delta
+			if tree["regen_timer"] <= 0.0:
+				tree["trades_left"] += 1
+				tree["regen_timer"] = gm.REGEN_INTERVAL
 
 	# Message timer
 	if gm.message_timer > 0:

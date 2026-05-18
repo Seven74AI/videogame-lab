@@ -53,8 +53,12 @@ func _refresh() -> void:
 	var ti: int = 0
 	for tree: Dictionary in gm.trees:
 		var marker: String = ">" if ti == gm.selected_tree_idx else " "
-		tree_text += "  %sT%d: %d trades left%s\n" % [
-			marker, ti + 1, tree["trades_left"],
+		var regen_bar: String = ""
+		if tree["trades_left"] < gm.MAX_TRADES_PER_TREE:
+			regen_bar = _regen_bar(tree["regen_timer"], gm.REGEN_INTERVAL)
+		tree_text += "  %sT%d: %d/%d trades%s%s\n" % [
+			marker, ti + 1, tree["trades_left"], gm.MAX_TRADES_PER_TREE,
+			regen_bar,
 			" (CD %.1fs)" % tree["cooldown"] if tree["cooldown"] > 0 else "",
 		]
 		ti += 1
@@ -84,3 +88,20 @@ func _on_state_changed() -> void:
 func _on_message(msg: String) -> void:
 	_message_label.text = msg
 	_message_label.visible = true
+
+# ── Regen bar helper ──────────────────────────────────────
+
+func _regen_bar(regen_timer: float, interval: float) -> String:
+	var progress: float = 1.0 - (regen_timer / interval)
+	progress = clampf(progress, 0.0, 1.0)
+
+	const WIDTH: int = 8
+	var filled: int = int(round(progress * WIDTH))
+	var bar: String = " ["
+	for i: int in range(WIDTH):
+		if i < filled:
+			bar += "\u2588"  # █ full block
+		else:
+			bar += "\u2591"  # ░ light shade
+	bar += "]"
+	return bar

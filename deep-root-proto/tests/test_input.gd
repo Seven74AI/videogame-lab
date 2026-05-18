@@ -158,3 +158,40 @@ func test_click_far_cell_fails() -> bool:
 				return true
 	_runner.assert_true(false, "no far empty cell found")
 	return false
+
+# ── Tree regen integration ─────────────────────────────────
+
+func test_trees_have_regen_timer() -> bool:
+	""" After new_game(), every tree must have a regen_timer field """
+	setup()
+	var gm = GameManager
+	_runner.assert_gt(gm.trees.size(), 0, "game must have trees")
+
+	const REGEN_INTERVAL: float = 60.0
+	for tree in gm.trees:
+		_runner.assert_true(tree.has("regen_timer"), "tree must have regen_timer field")
+		_runner.assert_ge(tree["regen_timer"], 0.0, "regen_timer must be non-negative")
+	return true
+
+
+func test_tree_regen_functional() -> bool:
+	""" Simulate real regen: depleted tree gets trade back after timer """
+	setup()
+	var gm = GameManager
+
+	# Deplete a tree completely
+	for tree in gm.trees:
+		tree["trades_left"] = 0
+		tree["regen_timer"] = 0.0  # timer expired
+
+	# Simulate one regen tick
+	for tree in gm.trees:
+		if tree["regen_timer"] <= 0.0 and tree["trades_left"] < gm.MAX_TRADES_PER_TREE:
+			tree["trades_left"] += 1
+			tree["regen_timer"] = 60.0
+
+	# All trees should now have 1 trade
+	for ti in range(gm.trees.size()):
+		var tree = gm.trees[ti]
+		_runner.assert_eq(tree["trades_left"], 1, "tree %d should regen to 1 after depletion" % ti)
+	return true

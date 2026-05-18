@@ -1,6 +1,5 @@
 ; Engine configuration file.
-; It's best edited using the editor UI and not directly,
-; since the parameters that go here are not all obvious.
+; DEEP ROOT proto v3 — Refactored architecture
 ;
 ; Format:
 ;   [section] ; section goes between []
@@ -10,11 +9,16 @@ config_version=5
 
 [application]
 
-config/name="DEEP ROOT proto v2"
-config/description="Proto v2 : 60x40 grid, 3 rivals, 3 trees"
+config/name="DEEP ROOT proto v3"
+config/description="Proto v3 : 60x40 grid, 3 rivals, 3 trees — refactored archi"
 config/features=PackedStringArray("4.2", "Forward Plus")
 config/icon=""
 run/main_scene="res://main.tscn"
+
+[autoload]
+
+GameManager="*res://autoloads/game_manager.gd"
+AIManager="*res://autoloads/ai_manager.gd"
 
 [display]
 

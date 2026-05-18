@@ -1,11 +1,8 @@
 # ═══════════════════════════════════════════════════════════════
-# validate.yml — Godot headless project validation CI
-# ═══════════════════════════════════════════════════════════════
-# Runs on every push to validate that the Godot project loads
-# without script errors, parse errors, or crashes.
+# validate.yml — Godot headless CI validation + test suite
 # ═══════════════════════════════════════════════════════════════
 
-name: Godot Headless Validation
+name: Godot Headless Validation + Tests
 
 on:
   push:
@@ -22,7 +19,7 @@ on:
 
 jobs:
   validate:
-    name: Godot ${{ matrix.godot-version }} — Headless Check
+    name: Godot ${{ matrix.godot-version }} — Validate + Tests
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -53,6 +50,11 @@ jobs:
           sudo chmod +x /usr/local/bin/godot4
           godot4 --version
 
-      - name: Run headless validation
+      - name: Run headless project validation
         run: |
           bash scripts/ci-validate.sh deep-root-proto/
+
+      - name: Run test suite
+        run: |
+          cd deep-root-proto
+          GODOT_SILENCE_ROOT_WARNING=1 godot4 --headless --path . res://tests/test.tscn

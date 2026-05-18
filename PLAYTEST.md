@@ -6,6 +6,7 @@
 ## Pre-Playtest (before launching Godot)
 
 - [ ] `scripts/ci-validate.sh` passes (headless Godot loads project without errors)
+- [ ] `GODOT_SILENCE_ROOT_WARNING=1 godot4 --headless --path deep-root-proto res://tests/test.tscn` — all 49 tests pass
 - [ ] `project.godot` has `run/main_scene` set
 - [ ] All `.gd` scripts compile (no parse errors in Godot output)
 - [ ] All `.tscn` scenes reference valid scripts and resources
@@ -14,21 +15,28 @@
 
 - [ ] Game window opens at target resolution (check `project.godot` display settings)
 - [ ] No errors in Godot Output panel on first frame
-- [ ] Main scene / menu appears correctly
+- [ ] Grid renders with TileMapLayer (60x40 grid visible)
+- [ ] HUD renders with Control nodes (GP, resources, rivals, trees visible)
 
 ## Core Loop (5-minute minimum)
 
-- [ ] Player can perform primary action(s) without crash
-- [ ] Game state updates correctly (score, HP, resources, etc.)
-- [ ] No softlocks — every game state has a path forward
-- [ ] Game can be reset / restarted without leaking state
+- [ ] Player can grow mycelium with arrow keys
+- [ ] Player can trade minerals for sugars with keys 1/2/3
+- [ ] Player can click empty cell to grow
+- [ ] Player can click tree to select it
+- [ ] 3 rival AIs expand with distinct personalities (Red aggressive, Orange defensive, Violet opportunistic)
+- [ ] Resources (water, minerals, sugar) are absorbed on growth
+- [ ] Trees have 6 trades each, cooldown between trades
+- [ ] Game state updates correctly (GP, resources, territory %)
+- [ ] R key resets the game cleanly
 
 ## Edge Cases
 
 - [ ] Rapid input spam does not crash or glitch
 - [ ] Window resize / minimize / restore does not break rendering
-- [ ] Pause (if implemented) freezes and resumes correctly
-- [ ] Empty state / game-over state renders correctly
+- [ ] Empty tree (0 trades left) rejects trades with message
+- [ ] Insufficient minerals blocks trade with message
+- [ ] Out-of-bounds click does not crash
 
 ## Performance
 
@@ -51,7 +59,7 @@
 
 | Date       | Tester     | Ticket ID | Result (PASS/FAIL) | Notes |
 |------------|------------|-----------|---------------------|-------|
-|            |            |           |                     |       |
+| 2026-05-18 | coder      | t_d7bc47e3 | CI PASS / 49 tests PASS | Proto v3 refactored: TileMap + Control UI + AStarGrid2D + auto-loads + shader + save system |
 
 ---
 

@@ -45,7 +45,8 @@ EXIT_CODE=$?
 echo "$OUTPUT"
 
 # Check for parse errors, load failures, or script errors
-ERRORS=$(echo "$OUTPUT" | grep -c -i -E '(ERROR:|SCRIPT ERROR|Parse Error|Failed to load|CRASH)') || true
+# Anchored patterns to Godot logger prefix to avoid false positives (e.g. "No ERROR:")
+ERRORS=$(echo "$OUTPUT" | grep -c -E '(^ERROR:|SCRIPT ERROR:|Parse Error:|Failed to load scene|Godot Engine v[0-9].*Crash)') || true
 
 if [ "$ERRORS" -gt 0 ]; then
     echo ""

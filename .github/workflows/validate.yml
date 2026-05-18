@@ -39,6 +39,9 @@ jobs:
         with:
           path: /usr/local/bin/godot4
           key: godot-${{ matrix.godot-version }}-linux-x86_64
+          restore-keys: |
+            godot-${{ matrix.godot-version }}-linux-
+            godot-
 
       - name: Install Godot
         if: steps.cache-godot.outputs.cache-hit != 'true'

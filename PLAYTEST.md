@@ -30,6 +30,18 @@
 - [ ] Pause (if implemented) freezes and resumes correctly
 - [ ] Empty state / game-over state renders correctly
 
+## Performance
+
+- [ ] Framerate stays stable at target (no sustained drops below 30 FPS)
+- [ ] No visible stutter or hitching during normal gameplay
+- [ ] Memory usage does not grow unbounded over 5+ minutes (no leak)
+
+## Audio
+
+- [ ] All sound effects play at correct timing and volume
+- [ ] No audio clipping, distortion, or missing sounds
+- [ ] Music loops cleanly (if implemented)
+
 ## Exit Check
 
 - [ ] Game closes cleanly (no hanging process, no crash on exit)

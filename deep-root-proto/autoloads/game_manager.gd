@@ -221,6 +221,83 @@ func get_zone_tint(pos: Vector2i) -> Color:
 		_: return Color(1.0, 1.0, 0.0, 0.06)              # Yellow = normal
 
 # ═══════════════════════════════════════════════════════════════
+# DIFFICULTY CURVE — Progressive challenge scaling
+# ═══════════════════════════════════════════════════════════════
+
+const DIFFICULTY_TIER_TERRITORY: Array[float] = [0.0, 5.0, 15.0, 30.0, 50.0, 70.0]
+const DIFFICULTY_RIVAL_MULTIPLIERS: Array[float] = [1.0, 1.15, 1.35, 1.6, 1.9, 2.5]
+const DIFFICULTY_RIVAL_BONUS_GP: Array[float] = [0.0, 0.5, 1.0, 1.5, 2.0, 3.0]
+const DIFFICULTY_NAMES: Array[String] = [
+	"Germination", "Spreading", "Colonizing", "Dominating", "Overgrowth", "Conqueror"
+]
+var _total_game_time: float = 0.0
+
+
+func player_territory_pct() -> float:
+	"""Player territory as percentage of total grid cells."""
+	var total: int = GRID_W * GRID_H
+	return float(player_cells.size()) / float(total) * 100.0
+
+
+func get_difficulty_tier() -> int:
+	"""Return difficulty tier based on player territory percentage."""
+	var pct: float = player_territory_pct()
+	var tier: int = 0
+	for i: int in range(DIFFICULTY_TIER_TERRITORY.size()):
+		if pct >= DIFFICULTY_TIER_TERRITORY[i]:
+			tier = i
+	return tier
+
+
+func get_difficulty_name() -> String:
+	return DIFFICULTY_NAMES[get_difficulty_tier()]
+
+
+func get_rival_speed_multiplier() -> float:
+	"""Scale rival growth speed based on difficulty tier."""
+	var tier: int = get_difficulty_tier()
+	if tier < DIFFICULTY_RIVAL_MULTIPLIERS.size():
+		return DIFFICULTY_RIVAL_MULTIPLIERS[tier]
+	return 1.0
+
+
+func get_rival_bonus_gp() -> float:
+	"""Extra GP per tick for rivals as difficulty increases."""
+	var tier: int = get_difficulty_tier()
+	if tier < DIFFICULTY_RIVAL_BONUS_GP.size():
+		return DIFFICULTY_RIVAL_BONUS_GP[tier]
+	return 0.0
+
+
+func is_mechanic_unlocked(mechanic: String) -> bool:
+	"""Check if an advanced mechanic is unlocked based on progress.
+	Mechanics: pulse, link, unlink."""
+	var tm := get_node_or_null("/root/TutorialManager")
+	if tm and tm.is_tutorial_active():
+		# During tutorial, only unlock mechanics after "trade" step
+		# "advanced" step is index 5
+		if tm.get_current_step() < 4:
+			return false
+
+	# Unlock based on territory %
+	match mechanic:
+		"pulse":
+			# Unlock when player has >10% territory (Spread tier+)
+			return player_territory_pct() >= 5.0
+		"link":
+			# Unlock when player has >15% territory (Colonizing tier+)
+			return player_territory_pct() >= 10.0
+		"unlink":
+			# Same as link
+			return player_territory_pct() >= 10.0
+	return true
+
+
+func tick_difficulty(delta: float) -> void:
+	"""Track total game time for progressive scaling."""
+	_total_game_time += delta
+
+# ═══════════════════════════════════════════════════════════════
 # GROWTH
 # ═══════════════════════════════════════════════════════════════
 

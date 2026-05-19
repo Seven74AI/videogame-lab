@@ -19,6 +19,7 @@ run/main_scene="res://main.tscn"
 
 GameManager="*res://autoloads/game_manager.gd"
 AIManager="*res://autoloads/ai_manager.gd"
+TutorialManager="*res://autoloads/tutorial_manager.gd"
 
 [display]
 

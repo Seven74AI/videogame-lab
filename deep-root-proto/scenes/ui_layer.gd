@@ -1,6 +1,8 @@
 # ═══════════════════════════════════════════════════════════════
 # ui_layer.gd — UILayer scene script
 # HUD in Control nodes (replaces _draw() UI)
+# Enhanced: typed messages (info/warning/success/error), color-coded,
+# difficulty tier display, tutorial hint.
 # ═══════════════════════════════════════════════════════════════
 extends CanvasLayer
 
@@ -12,6 +14,15 @@ extends CanvasLayer
 @onready var _territory_label: Label = $Panel/VBox/Territory
 @onready var _message_label: Label = $Panel/VBox/Message
 @onready var _controls_label: Label = $Controls
+
+# ── Message colors by type ─────────────────────────────────
+const MSG_COLORS: Dictionary = {
+	"info": Color(0.75, 0.85, 1.0, 1.0),     # Light blue
+	"warning": Color(1.0, 0.85, 0.3, 1.0),   # Gold
+	"success": Color(0.3, 1.0, 0.4, 1.0),    # Green
+	"error": Color(1.0, 0.3, 0.3, 1.0),      # Red
+	"milestone": Color(1.0, 0.6, 0.2, 1.0),  # Orange
+}
 
 
 func _ready() -> void:
@@ -31,6 +42,12 @@ func _refresh() -> void:
 	if gm == null: return
 
 	_title_label.text = "DEEP ROOT proto v3"
+
+	# ── Difficulty tier ───────────────────────────────────
+	var tier_name: String = gm.get_difficulty_name()
+	var tier: int = gm.get_difficulty_tier()
+	var rival_speed: float = gm.get_rival_speed_multiplier()
+	_title_label.text += "  [%s]" % tier_name
 
 	_stats_label.text = (
 		"Seed: %d\n" % gm.seed_val +
@@ -86,16 +103,18 @@ func _refresh() -> void:
 
 	_trees_label.text = tree_text
 
-	var total_cells: int = gm.GRID_W * gm.GRID_H
-	var pct: float = float(gm.player_cells.size()) / float(total_cells) * 100.0
-	_territory_label.text = "Territory: %.1f%%" % pct
+	var pct: float = gm.player_territory_pct()
+	_territory_label.text = "Territory: %.1f%%  |  Difficulty: %s (×%.2f)" % [pct, tier_name, rival_speed]
 
+	# ── Enhanced message display ──────────────────────────
 	if gm.message_timer > 0 and gm.message_text != "":
 		_message_label.text = gm.message_text
+		# Use default white for legacy messages (no type property)
 		_message_label.visible = true
 	else:
 		_message_label.visible = false
 
+	# ── Controls reminder ─────────────────────────────────
 	var ctrl_text: String = (
 		"Click: grow to cell  |  Arrows: grow direction  |  1/2/3: trade\n" +
 		"Click tree: select  |  Tab: cycle tree  |  G: pulse  |  L: link  |  U: unlink\n" +
@@ -111,6 +130,21 @@ func _on_state_changed() -> void:
 func _on_message(msg: String) -> void:
 	_message_label.text = msg
 	_message_label.visible = true
+
+
+# ── Public API: show typed message ──────────────────────────
+
+func show_typed_message(text: String, type: String = "info", duration: float = 2.0) -> void:
+	"""Show a color-coded message. Types: info, warning, success, error, milestone."""
+	var gm = get_node_or_null("/root/GameManager")
+	if gm:
+		gm.message_text = text
+		gm.message_timer = duration
+	var color: Color = MSG_COLORS.get(type, MSG_COLORS["info"])
+	_message_label.text = text
+	_message_label.add_theme_color_override("font_color", color)
+	_message_label.visible = true
+
 
 # ── Regen bar helper ──────────────────────────────────────
 

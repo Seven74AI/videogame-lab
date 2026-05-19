@@ -2,17 +2,19 @@ name: CI
 
 on:
   push:
-    branches: [main, master, dev]
-    paths-ignore: ['**.md', '**.txt', 'docs/**']
+    branches: [main]
+    paths-ignore: ['**.md', '**.txt']
   pull_request:
-    branches: [main, master]
+    branches: [main]
 
 jobs:
   ci:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: barichello/godot-ci@v4
         with:
           godot-version: '4.3'
+
       - run: godot --headless --quit --path deep-root-proto

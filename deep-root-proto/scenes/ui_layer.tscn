@@ -5,55 +5,392 @@
 [node name="UILayer" type="CanvasLayer"]
 script = ExtResource("1_ui")
 
-[node name="Panel" type="Panel" parent="."]
+; ═══════════════════════════════════════════════════════════════
+; HUD Panel — top-left, 280px wide
+; ═══════════════════════════════════════════════════════════════
+[node name="HUD_Panel" type="Panel" parent="."]
 offset_left = 4.0
 offset_top = 4.0
-offset_right = 204.0
-offset_bottom = 224.0
+offset_right = 284.0
+offset_bottom = 4.0
 mouse_filter = 1
 
-[node name="VBox" type="VBoxContainer" parent="Panel"]
-offset_left = 4.0
-offset_top = 4.0
-offset_right = 200.0
-offset_bottom = 220.0
+[node name="HUD_Margin" type="MarginContainer" parent="HUD_Panel"]
+offset_left = 2.0
+offset_top = 2.0
+offset_right = 280.0
+offset_bottom = 0.0
+mouse_filter = 1
+theme_override_constants/margin_left = 6
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 6
+theme_override_constants/margin_bottom = 4
 
-[node name="Title" type="Label" parent="Panel/VBox"]
+[node name="HUD_VBox" type="VBoxContainer" parent="HUD_Panel/HUD_Margin"]
+mouse_filter = 1
+theme_override_constants/separation = 3
+
+; ── Title ──────────────────────────────────────────────────
+[node name="Title" type="Label" parent="HUD_Panel/HUD_Margin/HUD_VBox"]
 text = "DEEP ROOT proto v3"
 modulate = Color(0.95, 0.80, 0.25, 1)
 mouse_filter = 1
 
-[node name="Stats" type="Label" parent="Panel/VBox"]
-text = ""
+[node name="HSep1" type="HSeparator" parent="HUD_Panel/HUD_Margin/HUD_VBox"]
+mouse_filter = 1
+
+; ── GP Section ─────────────────────────────────────────────
+[node name="GP_HBox" type="HBoxContainer" parent="HUD_Panel/HUD_Margin/HUD_VBox"]
+mouse_filter = 1
+theme_override_constants/separation = 4
+
+[node name="GpIcon" type="ColorRect" parent="HUD_Panel/HUD_Margin/HUD_VBox/GP_HBox"]
+custom_minimum_size = Vector2(12, 12)
+color = Color(0.25, 0.75, 0.35, 1)
+mouse_filter = 1
+
+[node name="GpLabel" type="Label" parent="HUD_Panel/HUD_Margin/HUD_VBox/GP_HBox"]
+text = "GP: 0.0"
 modulate = Color(0.9, 0.9, 0.9, 1)
 mouse_filter = 1
 
-[node name="Rivals" type="Label" parent="Panel/VBox"]
-text = ""
+[node name="GpBar" type="ProgressBar" parent="HUD_Panel/HUD_Margin/HUD_VBox"]
+custom_minimum_size = Vector2(0, 12)
+mouse_filter = 1
+max_value = 50.0
+value = 0.0
+show_percentage = false
+
+[node name="HSep2" type="HSeparator" parent="HUD_Panel/HUD_Margin/HUD_VBox"]
+mouse_filter = 1
+
+; ── Resources Grid (2 cols) ────────────────────────────────
+[node name="ResGrid" type="GridContainer" parent="HUD_Panel/HUD_Margin/HUD_VBox"]
+mouse_filter = 1
+columns = 2
+theme_override_constants/h_separation = 6
+theme_override_constants/v_separation = 2
+
+; Row: Water
+[node name="WaterIcon" type="ColorRect" parent="HUD_Panel/HUD_Margin/HUD_VBox/ResGrid"]
+custom_minimum_size = Vector2(10, 10)
+color = Color(0.18, 0.38, 0.85, 1)
+mouse_filter = 1
+
+[node name="WaterLabel" type="Label" parent="HUD_Panel/HUD_Margin/HUD_VBox/ResGrid"]
+text = "Water: 0"
 modulate = Color(0.9, 0.9, 0.9, 1)
 mouse_filter = 1
 
-[node name="Trees" type="Label" parent="Panel/VBox"]
-text = ""
+; Row: Minerals
+[node name="MineralIcon" type="ColorRect" parent="HUD_Panel/HUD_Margin/HUD_VBox/ResGrid"]
+custom_minimum_size = Vector2(10, 10)
+color = Color(0.65, 0.55, 0.25, 1)
+mouse_filter = 1
+
+[node name="MineralLabel" type="Label" parent="HUD_Panel/HUD_Margin/HUD_VBox/ResGrid"]
+text = "Mineral: 0"
 modulate = Color(0.9, 0.9, 0.9, 1)
 mouse_filter = 1
 
-[node name="Territory" type="Label" parent="Panel/VBox"]
+; Row: Sugars
+[node name="SugarIcon" type="ColorRect" parent="HUD_Panel/HUD_Margin/HUD_VBox/ResGrid"]
+custom_minimum_size = Vector2(10, 10)
+color = Color(0.95, 0.80, 0.25, 1)
+mouse_filter = 1
+
+[node name="SugarLabel" type="Label" parent="HUD_Panel/HUD_Margin/HUD_VBox/ResGrid"]
+text = "Sugars: 0"
+modulate = Color(0.9, 0.9, 0.9, 1)
+mouse_filter = 1
+
+; Row: Cells
+[node name="CellsIcon" type="ColorRect" parent="HUD_Panel/HUD_Margin/HUD_VBox/ResGrid"]
+custom_minimum_size = Vector2(10, 10)
+color = Color(0.3, 0.7, 0.7, 1)
+mouse_filter = 1
+
+[node name="CellsLabel" type="Label" parent="HUD_Panel/HUD_Margin/HUD_VBox/ResGrid"]
+text = "Cells: 0"
+modulate = Color(0.9, 0.9, 0.9, 1)
+mouse_filter = 1
+
+; Row: Absorbed
+[node name="AbsorbedIcon" type="ColorRect" parent="HUD_Panel/HUD_Margin/HUD_VBox/ResGrid"]
+custom_minimum_size = Vector2(10, 10)
+color = Color(0.8, 0.7, 0.2, 1)
+mouse_filter = 1
+
+[node name="AbsorbedLabel" type="Label" parent="HUD_Panel/HUD_Margin/HUD_VBox/ResGrid"]
+text = "Absorbed: 0"
+modulate = Color(0.9, 0.9, 0.9, 1)
+mouse_filter = 1
+
+[node name="HSep3" type="HSeparator" parent="HUD_Panel/HUD_Margin/HUD_VBox"]
+mouse_filter = 1
+
+; ── Territory ──────────────────────────────────────────────
+[node name="TerritoryBar" type="ProgressBar" parent="HUD_Panel/HUD_Margin/HUD_VBox"]
+custom_minimum_size = Vector2(0, 10)
+mouse_filter = 1
+max_value = 100.0
+value = 0.0
+show_percentage = false
+
+[node name="TerritoryLabel" type="Label" parent="HUD_Panel/HUD_Margin/HUD_VBox"]
 text = "Territory: 0.0%"
 modulate = Color(0.9, 0.9, 0.9, 1)
 mouse_filter = 1
 
-[node name="Message" type="Label" parent="Panel/VBox"]
+[node name="HSep4" type="HSeparator" parent="HUD_Panel/HUD_Margin/HUD_VBox"]
+mouse_filter = 1
+
+; ── Rivals Section ─────────────────────────────────────────
+[node name="RivalsHeader" type="Label" parent="HUD_Panel/HUD_Margin/HUD_VBox"]
+text = "── Rivals ──"
+modulate = Color(0.8, 0.8, 0.8, 1)
+mouse_filter = 1
+
+; Rival 1 (Red / aggressive)
+[node name="Rival1Panel" type="Panel" parent="HUD_Panel/HUD_Margin/HUD_VBox"]
+mouse_filter = 1
+custom_minimum_size = Vector2(0, 28)
+
+[node name="Rival1HBox" type="HBoxContainer" parent="HUD_Panel/HUD_Margin/HUD_VBox/Rival1Panel"]
+mouse_filter = 1
+theme_override_constants/separation = 4
+offset_left = 2.0
+offset_top = 2.0
+offset_right = -2.0
+offset_bottom = -2.0
+
+[node name="Rival1Color" type="ColorRect" parent="HUD_Panel/HUD_Margin/HUD_VBox/Rival1Panel/Rival1HBox"]
+custom_minimum_size = Vector2(8, 24)
+color = Color(0.88, 0.18, 0.18, 1)
+mouse_filter = 1
+
+[node name="Rival1Info" type="VBoxContainer" parent="HUD_Panel/HUD_Margin/HUD_VBox/Rival1Panel/Rival1HBox"]
+mouse_filter = 1
+
+[node name="Rival1Name" type="Label" parent="HUD_Panel/HUD_Margin/HUD_VBox/Rival1Panel/Rival1HBox/Rival1Info"]
+text = "Red"
+modulate = Color(0.95, 0.4, 0.35, 1)
+mouse_filter = 1
+
+[node name="Rival1Stats" type="Label" parent="HUD_Panel/HUD_Margin/HUD_VBox/Rival1Panel/Rival1HBox/Rival1Info"]
 text = ""
-modulate = Color(0.95, 0.80, 0.25, 1)
+modulate = Color(0.75, 0.75, 0.75, 1)
+mouse_filter = 1
+
+; Rival 2 (Orange / defensive)
+[node name="Rival2Panel" type="Panel" parent="HUD_Panel/HUD_Margin/HUD_VBox"]
+mouse_filter = 1
+custom_minimum_size = Vector2(0, 28)
+
+[node name="Rival2HBox" type="HBoxContainer" parent="HUD_Panel/HUD_Margin/HUD_VBox/Rival2Panel"]
+mouse_filter = 1
+theme_override_constants/separation = 4
+offset_left = 2.0
+offset_top = 2.0
+offset_right = -2.0
+offset_bottom = -2.0
+
+[node name="Rival2Color" type="ColorRect" parent="HUD_Panel/HUD_Margin/HUD_VBox/Rival2Panel/Rival2HBox"]
+custom_minimum_size = Vector2(8, 24)
+color = Color(0.92, 0.55, 0.08, 1)
+mouse_filter = 1
+
+[node name="Rival2Info" type="VBoxContainer" parent="HUD_Panel/HUD_Margin/HUD_VBox/Rival2Panel/Rival2HBox"]
+mouse_filter = 1
+
+[node name="Rival2Name" type="Label" parent="HUD_Panel/HUD_Margin/HUD_VBox/Rival2Panel/Rival2HBox/Rival2Info"]
+text = "Orange"
+modulate = Color(0.95, 0.65, 0.25, 1)
+mouse_filter = 1
+
+[node name="Rival2Stats" type="Label" parent="HUD_Panel/HUD_Margin/HUD_VBox/Rival2Panel/Rival2HBox/Rival2Info"]
+text = ""
+modulate = Color(0.75, 0.75, 0.75, 1)
+mouse_filter = 1
+
+; Rival 3 (Violet / opportunistic)
+[node name="Rival3Panel" type="Panel" parent="HUD_Panel/HUD_Margin/HUD_VBox"]
+mouse_filter = 1
+custom_minimum_size = Vector2(0, 28)
+
+[node name="Rival3HBox" type="HBoxContainer" parent="HUD_Panel/HUD_Margin/HUD_VBox/Rival3Panel"]
+mouse_filter = 1
+theme_override_constants/separation = 4
+offset_left = 2.0
+offset_top = 2.0
+offset_right = -2.0
+offset_bottom = -2.0
+
+[node name="Rival3Color" type="ColorRect" parent="HUD_Panel/HUD_Margin/HUD_VBox/Rival3Panel/Rival3HBox"]
+custom_minimum_size = Vector2(8, 24)
+color = Color(0.65, 0.18, 0.85, 1)
+mouse_filter = 1
+
+[node name="Rival3Info" type="VBoxContainer" parent="HUD_Panel/HUD_Margin/HUD_VBox/Rival3Panel/Rival3HBox"]
+mouse_filter = 1
+
+[node name="Rival3Name" type="Label" parent="HUD_Panel/HUD_Margin/HUD_VBox/Rival3Panel/Rival3HBox/Rival3Info"]
+text = "Violet"
+modulate = Color(0.7, 0.35, 0.9, 1)
+mouse_filter = 1
+
+[node name="Rival3Stats" type="Label" parent="HUD_Panel/HUD_Margin/HUD_VBox/Rival3Panel/Rival3HBox/Rival3Info"]
+text = ""
+modulate = Color(0.75, 0.75, 0.75, 1)
+mouse_filter = 1
+
+[node name="HSep5" type="HSeparator" parent="HUD_Panel/HUD_Margin/HUD_VBox"]
+mouse_filter = 1
+
+; ── Trees Section ──────────────────────────────────────────
+[node name="TreesHeader" type="Label" parent="HUD_Panel/HUD_Margin/HUD_VBox"]
+text = "── Trees ──"
+modulate = Color(0.8, 0.8, 0.8, 1)
+mouse_filter = 1
+
+; Tree 1
+[node name="Tree1Panel" type="Panel" parent="HUD_Panel/HUD_Margin/HUD_VBox"]
+mouse_filter = 1
+custom_minimum_size = Vector2(0, 32)
+
+[node name="Tree1HBox" type="HBoxContainer" parent="HUD_Panel/HUD_Margin/HUD_VBox/Tree1Panel"]
+mouse_filter = 1
+theme_override_constants/separation = 4
+offset_left = 2.0
+offset_top = 1.0
+offset_right = -2.0
+offset_bottom = -1.0
+
+[node name="Tree1Status" type="ColorRect" parent="HUD_Panel/HUD_Margin/HUD_VBox/Tree1Panel/Tree1HBox"]
+custom_minimum_size = Vector2(8, 28)
+color = Color(0.3, 0.8, 0.3, 1)
+mouse_filter = 1
+
+[node name="Tree1Info" type="VBoxContainer" parent="HUD_Panel/HUD_Margin/HUD_VBox/Tree1Panel/Tree1HBox"]
+mouse_filter = 1
+
+[node name="Tree1Name" type="Label" parent="HUD_Panel/HUD_Margin/HUD_VBox/Tree1Panel/Tree1HBox/Tree1Info"]
+text = "T1: 6/6 trades"
+modulate = Color(0.9, 0.9, 0.9, 1)
+mouse_filter = 1
+
+[node name="Tree1Bar" type="ProgressBar" parent="HUD_Panel/HUD_Margin/HUD_VBox/Tree1Panel/Tree1HBox/Tree1Info"]
+custom_minimum_size = Vector2(0, 8)
+mouse_filter = 1
+max_value = 6.0
+value = 6.0
+show_percentage = false
+
+[node name="Tree1Extra" type="Label" parent="HUD_Panel/HUD_Margin/HUD_VBox/Tree1Panel/Tree1HBox/Tree1Info"]
+text = ""
+modulate = Color(0.65, 0.65, 0.65, 1)
+mouse_filter = 1
+
+; Tree 2
+[node name="Tree2Panel" type="Panel" parent="HUD_Panel/HUD_Margin/HUD_VBox"]
+mouse_filter = 1
+custom_minimum_size = Vector2(0, 32)
+
+[node name="Tree2HBox" type="HBoxContainer" parent="HUD_Panel/HUD_Margin/HUD_VBox/Tree2Panel"]
+mouse_filter = 1
+theme_override_constants/separation = 4
+offset_left = 2.0
+offset_top = 1.0
+offset_right = -2.0
+offset_bottom = -1.0
+
+[node name="Tree2Status" type="ColorRect" parent="HUD_Panel/HUD_Margin/HUD_VBox/Tree2Panel/Tree2HBox"]
+custom_minimum_size = Vector2(8, 28)
+color = Color(0.3, 0.8, 0.3, 1)
+mouse_filter = 1
+
+[node name="Tree2Info" type="VBoxContainer" parent="HUD_Panel/HUD_Margin/HUD_VBox/Tree2Panel/Tree2HBox"]
+mouse_filter = 1
+
+[node name="Tree2Name" type="Label" parent="HUD_Panel/HUD_Margin/HUD_VBox/Tree2Panel/Tree2HBox/Tree2Info"]
+text = "T2: 6/6 trades"
+modulate = Color(0.9, 0.9, 0.9, 1)
+mouse_filter = 1
+
+[node name="Tree2Bar" type="ProgressBar" parent="HUD_Panel/HUD_Margin/HUD_VBox/Tree2Panel/Tree2HBox/Tree2Info"]
+custom_minimum_size = Vector2(0, 8)
+mouse_filter = 1
+max_value = 6.0
+value = 6.0
+show_percentage = false
+
+[node name="Tree2Extra" type="Label" parent="HUD_Panel/HUD_Margin/HUD_VBox/Tree2Panel/Tree2HBox/Tree2Info"]
+text = ""
+modulate = Color(0.65, 0.65, 0.65, 1)
+mouse_filter = 1
+
+; Tree 3
+[node name="Tree3Panel" type="Panel" parent="HUD_Panel/HUD_Margin/HUD_VBox"]
+mouse_filter = 1
+custom_minimum_size = Vector2(0, 32)
+
+[node name="Tree3HBox" type="HBoxContainer" parent="HUD_Panel/HUD_Margin/HUD_VBox/Tree3Panel"]
+mouse_filter = 1
+theme_override_constants/separation = 4
+offset_left = 2.0
+offset_top = 1.0
+offset_right = -2.0
+offset_bottom = -1.0
+
+[node name="Tree3Status" type="ColorRect" parent="HUD_Panel/HUD_Margin/HUD_VBox/Tree3Panel/Tree3HBox"]
+custom_minimum_size = Vector2(8, 28)
+color = Color(0.3, 0.8, 0.3, 1)
+mouse_filter = 1
+
+[node name="Tree3Info" type="VBoxContainer" parent="HUD_Panel/HUD_Margin/HUD_VBox/Tree3Panel/Tree3HBox"]
+mouse_filter = 1
+
+[node name="Tree3Name" type="Label" parent="HUD_Panel/HUD_Margin/HUD_VBox/Tree3Panel/Tree3HBox/Tree3Info"]
+text = "T3: 6/6 trades"
+modulate = Color(0.9, 0.9, 0.9, 1)
+mouse_filter = 1
+
+[node name="Tree3Bar" type="ProgressBar" parent="HUD_Panel/HUD_Margin/HUD_VBox/Tree3Panel/Tree3HBox/Tree3Info"]
+custom_minimum_size = Vector2(0, 8)
+mouse_filter = 1
+max_value = 6.0
+value = 6.0
+show_percentage = false
+
+[node name="Tree3Extra" type="Label" parent="HUD_Panel/HUD_Margin/HUD_VBox/Tree3Panel/Tree3HBox/Tree3Info"]
+text = ""
+modulate = Color(0.65, 0.65, 0.65, 1)
+mouse_filter = 1
+
+; ═══════════════════════════════════════════════════════════════
+; Message overlay — positioned at bottom of HUD area
+; ═══════════════════════════════════════════════════════════════
+[node name="MessageLabel" type="Label" parent="HUD_Panel/HUD_Margin/HUD_VBox"]
+text = ""
+modulate = Color(0.95, 0.80, 0.25, 0.0)
 visible = false
 mouse_filter = 1
 
-[node name="Controls" type="Label" parent="."]
+; ═══════════════════════════════════════════════════════════════
+; Controls bar — bottom strip
+; ═══════════════════════════════════════════════════════════════
+[node name="ControlsPanel" type="Panel" parent="."]
 offset_left = 4.0
 offset_top = 936.0
 offset_right = 1280.0
 offset_bottom = 960.0
+mouse_filter = 1
+
+[node name="ControlsLabel" type="Label" parent="ControlsPanel"]
+offset_left = 4.0
+offset_top = 4.0
+offset_right = -4.0
+offset_bottom = -4.0
 text = "Arrows: grow  |  1/2/3: trade  |  Tab: cycle tree"
 modulate = Color(0.9, 0.9, 0.9, 1)
 mouse_filter = 1

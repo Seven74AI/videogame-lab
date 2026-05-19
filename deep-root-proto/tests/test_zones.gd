@@ -103,7 +103,7 @@ func test_zone_near_rival() -> bool:
 	return true
 
 
-func test_zone_near_rival_beats_border() -> bool:
+func test_zone_border_beats_near_rival() -> bool:
 	"""Border check runs before near_rival — edge cells are border even if near rival."""
 	var r = _runner()
 	var rival_cells: Array[Vector2i] = [Vector2i(5, 2)]

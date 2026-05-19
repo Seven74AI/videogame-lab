@@ -71,12 +71,12 @@ func _process(delta: float) -> void:
 			if not gm.growth_candidates.is_empty():
 				gm.try_grow()
 
-		# Rival AI ticks
-		for i: int in range(am.rivals.size()):
-			am.rival_timers[i] -= delta
-			if am.rival_timers[i] <= 0.0:
-				am.rival_grow(i)
-				am.rival_timers[i] = am.rival_intervals[i]
+	# Rival AI ticks — iterate backward so rival death (remove_at) doesn't invalidate indices
+	for i: int in range(am.rivals.size() - 1, -1, -1):
+		am.rival_timers[i] -= delta
+		if am.rival_timers[i] <= 0.0:
+			am.rival_grow(i)
+			am.rival_timers[i] = am.rival_intervals[i]
 
 		# Rival phase cycles
 		am.update_rival_phases(delta)

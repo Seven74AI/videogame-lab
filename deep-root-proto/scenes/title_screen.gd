@@ -10,6 +10,8 @@ enum FadeState { FADING_IN, IDLE, FADING_OUT, WAITING }
 var _fade_state: int = FadeState.FADING_IN
 var _fade_progress: float = 0.0
 const FADE_DURATION: float = 0.6
+const FADE_HOLD: float = 1.0  # Hold at black before fading in (dramatic pause)
+
 # ── Title animation ──────────────────────────────────────
 var _title_anim_t: float = 0.0
 var _title_base_scale: Vector2 = Vector2.ONE
@@ -54,10 +56,6 @@ func _ready() -> void:
 	_init_particles()
 	# Connect particle draw signal so _on_particles_draw actually renders
 	_particles_node.draw.connect(_on_particles_draw)
-
-	# Connect particles draw signal
-	if not _particles_node.draw.is_connected(_on_particles_draw):
-		_particles_node.draw.connect(_on_particles_draw)
 
 	# Override controls text — it's set in tscn, but make it consistent
 	_controls_label.text = "[url=]Arrow keys: grow  |  Click: expand  |  1/2/3: trade  |  Tab: cycle tree  |  R: reset[/url]"

@@ -20,6 +20,9 @@ var _test_files: PackedStringArray = [
 	"res://tests/test_tutorial.gd",
 	"res://tests/test_difficulty.gd",
 	"res://tests/test_messages.gd",
+	"res://tests/test_audio.gd",
+	"res://tests/test_menu.gd",
+	"res://tests/test_core_loop.gd",
 ]
 
 

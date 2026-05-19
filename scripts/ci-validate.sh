@@ -106,7 +106,55 @@ if [ "$EXIT_CODE" -ne 0 ]; then
 fi
 
 echo ""
+
+# ── GUT Test Suite + Coverage ─────────────────────────────────
+echo "→ Running GUT test suite with coverage..."
+GUT_OUTPUT=$("$GODOT" --headless --path "$PROJECT_PATH" -s addons/gut/gut_cmdln.gd -gconfig=.gutconfig.json -gcover 2>&1)
+GUT_EXIT=$?
+
+echo "$GUT_OUTPUT"
+
+# Check for test failures and errors
+GUT_FAILS=$(echo "$GUT_OUTPUT" | grep -c "failing assertions\|Failed [0-9]* tests" || true)
+GUT_ERRORS=$(echo "$GUT_OUTPUT" | grep -cE "(ERROR:|SCRIPT ERROR:)" || true)
+
+if [ "$GUT_EXIT" -ne 0 ] || [ "$GUT_FAILS" -gt 0 ] || [ "$GUT_ERRORS" -gt 0 ]; then
+    echo ""
+    echo "════════════════════════════════════════════════════════════"
+    echo "  GUT TEST SUITE FAILED — exit=$GUT_EXIT fails=$GUT_FAILS errors=$GUT_ERRORS"
+    echo "════════════════════════════════════════════════════════════"
+    exit 1
+fi
+
+echo "  GUT test suite PASSED"
+
+# ── Coverage Enforcement (80% threshold) ──────────────────────
+echo ""
+echo "→ Checking coverage threshold (80%)..."
+COV_JSON="$PROJECT_PATH/coverage/json/coverage.json"
+
+if [ -f "$COV_JSON" ]; then
+    COV=$(python3 -c "import json; d=json.load(open('$COV_JSON')); pct=d.get('totals',{}).get('line_percent',0); print(pct)" 2>/dev/null)
+    if [ -n "$COV" ]; then
+        COV_THRESHOLD=80
+        COV_OK=$(echo "$COV >= $COV_THRESHOLD" | bc 2>/dev/null || echo 0)
+        if [ "$COV_OK" -eq 0 ]; then
+            echo "  COVERAGE FAILED: ${COV}% < ${COV_THRESHOLD}%"
+            echo "════════════════════════════════════════════════════════════"
+            echo "  COVERAGE BELOW THRESHOLD"
+            echo "════════════════════════════════════════════════════════════"
+            exit 1
+        fi
+        echo "  Coverage: ${COV}% ≥ ${COV_THRESHOLD}% — PASSED"
+    else
+        echo "  WARNING: Could not parse coverage percentage from $COV_JSON"
+    fi
+else
+    echo "  WARNING: coverage.json not found at $COV_JSON"
+fi
+
+echo ""
 echo "════════════════════════════════════════════════════════════"
-echo "  VALIDATION PASSED — Project loads without errors"
+echo "  VALIDATION PASSED — Project loads without errors, tests + coverage OK"
 echo "════════════════════════════════════════════════════════════"
 exit 0

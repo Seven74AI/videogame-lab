@@ -14,6 +14,7 @@ offset_left = 32.0
 offset_top = 640.0
 offset_right = -32.0
 offset_bottom = -32.0
+mouse_filter = 1
 
 [node name="VBox" type="VBoxContainer" parent="Panel"]
 layout_mode = 1
@@ -31,15 +32,18 @@ layout_mode = 2
 text = "Tutorial"
 theme_override_colors/font_color = Color(0.95, 0.8, 0.25, 1)
 theme_override_font_sizes/font_size = 18
+mouse_filter = 1
 
 [node name="BodyLabel" type="Label" parent="Panel/VBox"]
 layout_mode = 2
 text = "Tutorial content..."
 autowrap_mode = 3
 theme_override_font_sizes/font_size = 14
+mouse_filter = 1
 
 [node name="HintLabel" type="Label" parent="Panel/VBox"]
 layout_mode = 2
 text = "Press any key to continue..."
 theme_override_colors/font_color = Color(0.6, 0.6, 0.7, 1)
 theme_override_font_sizes/font_size = 12
+mouse_filter = 1

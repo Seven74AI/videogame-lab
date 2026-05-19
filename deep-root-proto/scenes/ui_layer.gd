@@ -60,6 +60,13 @@ extends CanvasLayer
 @onready var _message_label: Label = $HUD_Panel/HUD_Margin/HUD_VBox/MessageLabel
 @onready var _controls_label: Label = $ControlsPanel/ControlsLabel
 
+# ── Cached StyleBoxFlat for GP bar (avoid per-frame alloc) ──
+var _gp_bar_style: StyleBoxFlat
+var _gp_bar_last_color: Color = Color.BLACK
+# ── Cached StyleBoxFlat for tree bars ──────────────────────
+var _tree_bar_styles: Array[StyleBoxFlat] = []
+var _tree_bar_last_colors: Array[Color] = []
+
 # ── Flash state for visual feedback ─────────────────────────
 var _prev_gp: float = -1.0
 var _prev_water: int = -1
@@ -126,11 +133,14 @@ func _refresh_gp(gm) -> void:
 	_gp_bar.value = gp_val
 	_gp_bar.max_value = 50.0
 
-	# Color-coded GP bar via style override
+	# Color-coded GP bar via style override (cached)
 	var bar_color: Color = _gp_bar_color(gp_val)
-	var style := StyleBoxFlat.new()
-	style.bg_color = bar_color
-	_gp_bar.add_theme_stylebox_override("fill", style)
+	if bar_color != _gp_bar_last_color:
+		if _gp_bar_style == null:
+			_gp_bar_style = StyleBoxFlat.new()
+		_gp_bar_style.bg_color = bar_color
+		_gp_bar.add_theme_stylebox_override("fill", _gp_bar_style)
+		_gp_bar_last_color = bar_color
 
 	# GP icon color (same as bar)
 	_gp_icon.color = bar_color
@@ -239,12 +249,19 @@ func _refresh_trees(gm) -> void:
 			var marker: String = ">" if i == gm.selected_tree_idx else " "
 			names[i].text = "%sT%d: %d/%d trades" % [marker, i + 1, tree["trades_left"], gm.MAX_TRADES_PER_TREE]
 
-			# Trades bar
+			# Trades bar (cached StyleBoxFlat)
 			bars[i].value = tree["trades_left"]
 			bars[i].max_value = gm.MAX_TRADES_PER_TREE
-			var bar_style := StyleBoxFlat.new()
-			bar_style.bg_color = status_color
-			bars[i].add_theme_stylebox_override("fill", bar_style)
+			# Ensure cached arrays are sized for this index
+			if _tree_bar_styles.size() <= i:
+				_tree_bar_styles.resize(i + 1)
+				_tree_bar_last_colors.resize(i + 1)
+			if status_color != _tree_bar_last_colors[i]:
+				if _tree_bar_styles[i] == null:
+					_tree_bar_styles[i] = StyleBoxFlat.new()
+				_tree_bar_styles[i].bg_color = status_color
+				bars[i].add_theme_stylebox_override("fill", _tree_bar_styles[i])
+				_tree_bar_last_colors[i] = status_color
 
 			# Extra info line
 			var extra_text: String = ""
@@ -350,10 +367,6 @@ static func _fmt_gp_rate(rate: float) -> String:
 	return "+%.2f/s" % rate
 
 
-static func _fmt_resource_count(current: int, max_count: int) -> String:
-	return "%d/%d" % [current, max_count]
-
-
 static func _rival_display_name(personality: String) -> String:
 	match personality:
 		"aggressive": return "Red"
@@ -367,16 +380,6 @@ static func _rival_icon_color(personality: String) -> Color:
 		"aggressive": return Color(0.88, 0.18, 0.18)
 		"defensive": return Color(0.92, 0.55, 0.08)
 		"opportunistic": return Color(0.65, 0.18, 0.85)
-		_: return Color.GRAY
-
-
-static func _resource_icon_color(type: String) -> Color:
-	match type:
-		"water": return Color(0.18, 0.38, 0.85)
-		"minerals": return Color(0.65, 0.55, 0.25)
-		"sugars": return Color(0.95, 0.80, 0.25)
-		"gp": return Color(0.25, 0.75, 0.35)
-		"cells": return Color(0.3, 0.7, 0.7)
 		_: return Color.GRAY
 
 

@@ -75,26 +75,10 @@ func test_fmt_gp_rate_zero() -> bool:
 	return true
 
 
-# ── Resource count formatting ─────────────────────────────
-
-func test_fmt_resource_count() -> bool:
-	""" Resource count formats as 'current/max' """
+func test_fmt_gp_rate_negative() -> bool:
+	""" GP rate formats negative value """
 	var r = _runner()
-	r.assert_eq(_fmt_resource_count(5, 10), "5/10", "half count")
-	return true
-
-
-func test_fmt_resource_count_zero() -> bool:
-	""" Resource count with zero current """
-	var r = _runner()
-	r.assert_eq(_fmt_resource_count(0, 10), "0/10", "zero count")
-	return true
-
-
-func test_fmt_resource_count_full() -> bool:
-	""" Resource count at max """
-	var r = _runner()
-	r.assert_eq(_fmt_resource_count(10, 10), "10/10", "full count")
+	r.assert_eq(_fmt_gp_rate(-0.37), "+-0.37/s", "negative rate")
 	return true
 
 
@@ -121,6 +105,13 @@ func test_rival_display_name_opportunistic() -> bool:
 	return true
 
 
+func test_rival_display_name_unknown() -> bool:
+	""" Unknown personality returns the string as-is """
+	var r = _runner()
+	r.assert_eq(_rival_display_name("pacifist"), "pacifist", "unknown -> self")
+	return true
+
+
 func test_rival_icon_color_aggressive() -> bool:
 	""" Aggressive rival icon color is red """
 	var r = _runner()
@@ -142,40 +133,10 @@ func test_rival_icon_color_opportunistic() -> bool:
 	return true
 
 
-# ── Resource icon colors ──────────────────────────────────
-
-func test_resource_icon_color_water() -> bool:
-	""" Water icon is blue """
+func test_rival_icon_color_unknown() -> bool:
+	""" Unknown personality returns GRAY """
 	var r = _runner()
-	r.assert_eq(_resource_icon_color("water"), Color(0.18, 0.38, 0.85), "water blue")
-	return true
-
-
-func test_resource_icon_color_minerals() -> bool:
-	""" Minerals icon is brown/gold """
-	var r = _runner()
-	r.assert_eq(_resource_icon_color("minerals"), Color(0.65, 0.55, 0.25), "minerals brown")
-	return true
-
-
-func test_resource_icon_color_sugars() -> bool:
-	""" Sugars icon is gold """
-	var r = _runner()
-	r.assert_eq(_resource_icon_color("sugars"), Color(0.95, 0.80, 0.25), "sugars gold")
-	return true
-
-
-func test_resource_icon_color_gp() -> bool:
-	""" GP icon is green """
-	var r = _runner()
-	r.assert_eq(_resource_icon_color("gp"), Color(0.25, 0.75, 0.35), "gp green")
-	return true
-
-
-func test_resource_icon_color_cells() -> bool:
-	""" Cells icon is teal """
-	var r = _runner()
-	r.assert_eq(_resource_icon_color("cells"), Color(0.3, 0.7, 0.7), "cells teal")
+	r.assert_eq(_rival_icon_color("unknown"), Color.GRAY, "unknown -> gray")
 	return true
 
 
@@ -221,6 +182,14 @@ func test_tree_status_linked_depleted() -> bool:
 	return true
 
 
+func test_tree_status_defaults() -> bool:
+	""" Tree with missing keys defaults to depleted (trades_left defaults to 0) """
+	var tree: Dictionary = {}
+	var r = _runner()
+	r.assert_eq(_tree_status(tree, 6), "depleted", "defaults to depleted")
+	return true
+
+
 # ── Tree status color ─────────────────────────────────────
 
 func test_tree_status_color_available() -> bool:
@@ -248,6 +217,13 @@ func test_tree_status_color_linked() -> bool:
 	""" Linked tree color is purple """
 	var r = _runner()
 	r.assert_eq(_tree_status_color("linked"), Color(0.6, 0.4, 0.95), "linked purple")
+	return true
+
+
+func test_tree_status_color_unknown() -> bool:
+	""" Unknown status returns GRAY """
+	var r = _runner()
+	r.assert_eq(_tree_status_color("unknown"), Color.GRAY, "unknown -> gray")
 	return true
 
 
@@ -281,6 +257,27 @@ func test_gp_bar_color_critical() -> bool:
 	return true
 
 
+func test_gp_bar_color_boundary_30() -> bool:
+	""" GP at exactly 30 returns green (>=30 threshold) """
+	var r = _runner()
+	r.assert_eq(_gp_bar_color(30.0), Color(0.25, 0.75, 0.35), "GP=30 green")
+	return true
+
+
+func test_gp_bar_color_boundary_10() -> bool:
+	""" GP at exactly 10 returns yellow-green (>=10 threshold) """
+	var r = _runner()
+	r.assert_eq(_gp_bar_color(10.0), Color(0.5, 0.8, 0.25), "GP=10 yellow-green")
+	return true
+
+
+func test_gp_bar_color_boundary_5() -> bool:
+	""" GP at exactly 5 returns orange-red (>=5 threshold) """
+	var r = _runner()
+	r.assert_eq(_gp_bar_color(5.0), Color(0.9, 0.4, 0.15), "GP=5 orange-red")
+	return true
+
+
 # ── Helper functions (duplicated here for test isolation) ──
 
 static func _calc_bar_ratio(current: float, max_val: float) -> float:
@@ -290,10 +287,6 @@ static func _calc_bar_ratio(current: float, max_val: float) -> float:
 
 static func _fmt_gp_rate(rate: float) -> String:
 	return "+%.2f/s" % rate
-
-
-static func _fmt_resource_count(current: int, max_count: int) -> String:
-	return "%d/%d" % [current, max_count]
 
 
 static func _rival_display_name(personality: String) -> String:
@@ -309,16 +302,6 @@ static func _rival_icon_color(personality: String) -> Color:
 		"aggressive": return Color(0.88, 0.18, 0.18)
 		"defensive": return Color(0.92, 0.55, 0.08)
 		"opportunistic": return Color(0.65, 0.18, 0.85)
-		_: return Color.GRAY
-
-
-static func _resource_icon_color(type: String) -> Color:
-	match type:
-		"water": return Color(0.18, 0.38, 0.85)
-		"minerals": return Color(0.65, 0.55, 0.25)
-		"sugars": return Color(0.95, 0.80, 0.25)
-		"gp": return Color(0.25, 0.75, 0.35)
-		"cells": return Color(0.3, 0.7, 0.7)
 		_: return Color.GRAY
 
 

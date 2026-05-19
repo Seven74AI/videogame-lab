@@ -236,11 +236,104 @@ func test_reset_clears_game_over() -> bool:
 
 
 func test_end_screen_scene_loadable() -> bool:
-	"""End screen scene should be loadable"""
+	"""End screen scene should be loadable with all required nodes"""
 	var r = _runner()
 	r.assert_true(ResourceLoader.exists("res://scenes/end_screen.tscn"), "end_screen.tscn exists")
 	r.assert_true(ResourceLoader.exists("res://scenes/end_screen.gd"), "end_screen.gd exists")
 	if ResourceLoader.exists("res://scenes/end_screen.tscn"):
 		var scene: PackedScene = load("res://scenes/end_screen.tscn")
 		r.assert_not_null(scene, "end_screen.tscn loadable")
+		var instance: CanvasLayer = scene.instantiate()
+		r.assert_not_null(instance, "end_screen instance created")
+		# Verify all required child nodes exist
+		r.assert_not_null(instance.get_node_or_null("BG"), "BG node exists")
+		r.assert_not_null(instance.get_node_or_null("Panel"), "Panel node exists")
+		r.assert_not_null(instance.get_node_or_null("Panel/Margin/VBox/Title"), "Title exists")
+		r.assert_not_null(instance.get_node_or_null("Panel/Margin/VBox/Reason"), "Reason exists")
+		r.assert_not_null(instance.get_node_or_null("Panel/Margin/VBox/SummarySection/SummaryText"), "SummaryText exists")
+		r.assert_not_null(instance.get_node_or_null("Panel/Margin/VBox/ChartsRow/ResourceChart"), "ResourceChart exists")
+		r.assert_not_null(instance.get_node_or_null("Panel/Margin/VBox/ChartsRow/ProgressChart"), "ProgressChart exists")
+		r.assert_not_null(instance.get_node_or_null("Panel/Margin/VBox/RivalsSection/RivalsGrid"), "RivalsGrid exists")
+		r.assert_not_null(instance.get_node_or_null("Panel/Margin/VBox/ReplayBtn"), "ReplayBtn exists")
+		instance.queue_free()
+	return true
+
+
+func test_build_run_summary_generates_text() -> bool:
+	"""Run summary should generate non-empty text with stats"""
+	var gm = get_node_or_null("/root/GameManager")
+	if gm == null: return false
+	_setup_controlled_grid(gm)
+	gm.player_cells.append(Vector2i(30, 20))
+	gm.player_cells.append(Vector2i(30, 21))
+	gm.grid[20][30] = CellType.MYCELIUM
+	gm.grid[21][30] = CellType.MYCELIUM
+	gm.player_absorbed = 5
+	gm.player_sugars = 3
+	gm.player_minerals = 2
+	gm.player_water = 4
+	gm.player_gp = 25.0
+	gm.seed_val = 42
+
+	# Instantiate end screen and call summary builder
+	var scene: PackedScene = load("res://scenes/end_screen.tscn")
+	var instance: CanvasLayer = scene.instantiate()
+	add_child(instance)
+	var summary: String = instance._build_run_summary(gm)
+
+	var r = _runner()
+	r.assert_true(summary.length() > 0, "Summary is not empty")
+	r.assert_true("2" in summary, "Summary mentions cell count")  # 2 cells
+	r.assert_true("5" in summary, "Summary mentions absorbed count")
+	instance.queue_free()
+	return true
+
+
+func test_run_summary_includes_performance_tier() -> bool:
+	"""Run summary should include a performance tier"""
+	var gm = get_node_or_null("/root/GameManager")
+	if gm == null: return false
+	_setup_controlled_grid(gm)
+	# Place 200 cells to get "legendary" tier
+	for i: int in range(200):
+		gm.player_cells.append(Vector2i(i % gm.GRID_W, i / gm.GRID_W))
+	gm.player_absorbed = 40
+	gm.player_sugars = 10
+	gm.player_gp = 50.0
+	gm.seed_val = 99
+
+	var scene: PackedScene = load("res://scenes/end_screen.tscn")
+	var instance: CanvasLayer = scene.instantiate()
+	add_child(instance)
+	var summary: String = instance._build_run_summary(gm)
+
+	var r = _runner()
+	r.assert_true("LEGENDARY" in summary, "200 cells = legendary tier, found LEGENDARY in summary")
+	r.assert_true("TROPHY" in summary, "Legendary tier has trophy icon")
+	instance.queue_free()
+	return true
+
+
+func test_end_screen_visible_on_game_over() -> bool:
+	"""End screen should become visible when game ends — test via tree-attached instance"""
+	var gm = get_node_or_null("/root/GameManager")
+	if gm == null: return false
+	_setup_controlled_grid(gm)
+	gm.player_cells.append(Vector2i(30, 20))
+	gm.grid[20][30] = CellType.MYCELIUM
+
+	var scene: PackedScene = load("res://scenes/end_screen.tscn")
+	var instance: CanvasLayer = scene.instantiate()
+	instance.visible = false
+
+	# Add to tree so /root autoload lookups work
+	add_child(instance)
+
+	# Simulate game end
+	gm.game_over = false  # Reset so end_game doesn't bail
+	gm.end_game("test_reason")
+
+	var r = _runner()
+	r.assert_true(instance.visible, "End screen visible after game over")
+	instance.queue_free()
 	return true

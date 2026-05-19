@@ -17,6 +17,7 @@ run/main_scene="res://main.tscn"
 
 [autoload]
 
+AudioManager="*res://autoloads/audio_manager.gd"
 GameManager="*res://autoloads/game_manager.gd"
 AIManager="*res://autoloads/ai_manager.gd"
 TutorialManager="*res://autoloads/tutorial_manager.gd"

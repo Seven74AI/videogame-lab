@@ -325,6 +325,7 @@ func try_grow() -> void:
 	_set_cell(chosen, CellType.MYCELIUM)
 	player_cells.append(chosen)
 	_add_pulse(chosen, Color(0.25, 0.75, 0.35), "grow")
+	AudioManager.play_sfx("mycelium_expansion", cell_to_world(chosen))
 	if grid_resources[chosen.y][chosen.x] > 0:
 		_absorb_resource(chosen, true)
 
@@ -347,6 +348,7 @@ func try_player_grow_to(target: Vector2i) -> bool:
 	_set_cell(target, CellType.MYCELIUM)
 	player_cells.append(target)
 	_add_pulse(target, Color(0.25, 0.75, 0.35), "grow")
+	AudioManager.play_sfx("mycelium_expansion", cell_to_world(target))
 	if grid_resources[target.y][target.x] > 0:
 		_absorb_resource(target, true)
 	return true
@@ -373,13 +375,16 @@ func _absorb_resource(cell: Vector2i, is_player: bool) -> void:
 			CellType.WATER:
 				player_water += 1
 				player_gp += 2.0
+				AudioManager.play_sfx("water_absorption", cell_to_world(cell))
 			CellType.MINERAL:
 				player_minerals += 1
 				player_gp += 3.0
+				AudioManager.play_sfx("mineral_absorption", cell_to_world(cell))
 			CellType.SUGAR:
 				player_sugars += 1
 				player_gp += 1.0
 				player_gp_rate = minf(BASE_GP_RATE + player_sugars * SUGAR_GP_BOOST, BASE_GP_RATE + MAX_SUGAR_BOOST)
+				AudioManager.play_sfx("sugar_absorption", cell_to_world(cell))
 		message_text = "Absorbed %s (%d total)" % [_cell_type_name(cell_type), player_absorbed]
 		message_timer = 2.0
 		state_changed.emit()
@@ -424,6 +429,7 @@ func trade(rate_idx: int) -> void:
 	trade_completed.emit(selected_tree_idx, cost, gain)
 
 	_add_pulse(tree["pos"], Color(0.95, 0.80, 0.25), "trade")
+	AudioManager.play_sfx("tree_trade", cell_to_world(tree["pos"]))
 	state_changed.emit()
 
 
@@ -625,6 +631,11 @@ func get_cell(pos: Vector2i) -> int:
 
 func screen_to_cell(screen_pos: Vector2) -> Vector2i:
 	return Vector2i(int(screen_pos.x / CELL_SIZE), int(screen_pos.y / CELL_SIZE))
+
+
+func cell_to_world(pos: Vector2i) -> Vector2:
+	"""Convert grid cell position to world-space center coordinates."""
+	return Vector2(pos.x * CELL_SIZE + CELL_SIZE / 2.0, pos.y * CELL_SIZE + CELL_SIZE / 2.0)
 
 
 func player_center() -> Vector2i:

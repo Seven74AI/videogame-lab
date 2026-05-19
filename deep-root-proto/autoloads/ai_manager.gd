@@ -267,6 +267,7 @@ func rival_grow(rival_idx: int) -> void:
 	if grow_color.a <= 0:
 		grow_color = rival["color"]
 	gm._add_pulse(best_cell, grow_color, "grow")
+	AudioManager.play_sfx("rival_expansion", gm.cell_to_world(best_cell))
 
 	if gm.grid_resources[best_cell.y][best_cell.x] > 0:
 		gm.grid_resources[best_cell.y][best_cell.x] = 0.0

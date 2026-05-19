@@ -50,6 +50,15 @@ func _process(delta: float) -> void:
 	var gm: GameManager = GameManager
 	var am: AIManager = AIManager
 
+	# ── Music state update ──────────────────────────────────
+	var rival_cell_count: int = 0
+	for rival: Dictionary in am.rivals:
+		rival_cell_count += rival["cells"].size()
+	var trade_count: int = 0
+	for tree: Dictionary in gm.trees:
+		trade_count += gm.MAX_TRADES_PER_TREE - tree["trades_left"]
+	AudioManager.update_music_state(rival_cell_count, trade_count, gm.player_sugars)
+
 	# History tracking (before any game-over check, so last frame is recorded)
 	gm.tick_history(delta)
 
@@ -136,16 +145,20 @@ func _input(event: InputEvent) -> void:
 							gm.selected_tree_idx = ti
 							gm.message_text = "Tree %d selected (%d trades left)" % [ti + 1, gm.trees[ti]["trades_left"]]
 							gm.message_timer = 2.0
+						AudioManager.play_sfx("ui_click")
 						break
 			elif ct == gm.CellType.EMPTY:
 				gm.try_player_grow_to(cell)
 
 	if Input.is_action_just_pressed("trade_1"):
 		gm.trade(0)
+		AudioManager.play_sfx("ui_click")
 	if Input.is_action_just_pressed("trade_2"):
 		gm.trade(1)
+		AudioManager.play_sfx("ui_click")
 	if Input.is_action_just_pressed("trade_3"):
 		gm.trade(2)
+		AudioManager.play_sfx("ui_click")
 
 	# ── Deep Root Pulse ──────────────────────────────────
 	if Input.is_action_just_pressed("pulse_tree"):

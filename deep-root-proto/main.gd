@@ -4,18 +4,23 @@
 # GridLayer handles rendering, UILayer handles HUD.
 # Juice: Camera2D screen shake + ColorRect fade transitions
 #         + AudioListener2D spatial audio + camera animations
+# UX: Tutorial overlay + difficulty curve + milestone messages
 # ═══════════════════════════════════════════════════════════════
 extends Node2D
 
 @onready var _camera: Camera2D = $Camera2D
 @onready var _fade_overlay: CanvasLayer = $FadeCanvas
 @onready var _fade_rect: ColorRect = $FadeCanvas/ColorRect
+@onready var _tutorial_overlay: CanvasLayer = $TutorialOverlay
 
 var mouse_pos: Vector2 = Vector2.ZERO
 var hover_cell: Vector2i = Vector2i(-1, -1)
 
 var _end_screen_scene: PackedScene = preload("res://scenes/end_screen.tscn")
 var _end_screen_instance: CanvasLayer = null
+
+# ── Difficulty milestone tracking ─────────────────────────
+var _last_difficulty_tier: int = 0
 
 var _title_screen_scene: PackedScene = preload("res://scenes/title_screen.tscn")
 var _title_screen_instance: CanvasLayer = null
@@ -95,6 +100,13 @@ func _on_start_game() -> void:
 	AIManager.setup_rivals()
 	GameManager.game_ended.connect(_on_game_ended)
 
+	# ── Start tutorial (TutorialManager checks if already completed) ──
+	var tm := get_node_or_null("/root/TutorialManager")
+	if tm:
+		tm.start_tutorial()
+	var gm2: GameManager = GameManager
+	_last_difficulty_tier = gm2.get_difficulty_tier()
+
 	# Remove title screen
 	if _title_screen_instance != null:
 		_title_screen_instance.queue_free()
@@ -139,6 +151,10 @@ func _process(delta: float) -> void:
 
 	# History tracking (before any game-over check, so last frame is recorded)
 	gm.tick_history(delta)
+
+	# ── Difficulty tracking ───────────────────────────────
+	gm.tick_difficulty(delta)
+	_check_difficulty_milestone(gm)
 
 	# Check game over
 	gm.check_game_over()
@@ -204,6 +220,16 @@ func _input(event: InputEvent) -> void:
 	if gm.game_over:
 		return
 
+	# ── Tutorial: route input to TutorialManager ───────────
+	var tm2 := get_node_or_null("/root/TutorialManager")
+	if tm2 and tm2.is_tutorial_active():
+		if event is InputEventKey and event.pressed:
+			tm2.advance_tutorial()
+		elif event is InputEventMouseButton and event.pressed:
+			tm2.advance_tutorial()
+		if tm2.is_input_blocked():
+			return  # Don't process game input during blocking tutorial steps
+
 	# Block input during fade/reset AND before game has started
 	if _fade_state != FadeState.NONE or gm.is_resetting or not _game_started:
 		return
@@ -243,7 +269,10 @@ func _input(event: InputEvent) -> void:
 
 	# ── Deep Root Pulse ──────────────────────────────────
 	if Input.is_action_just_pressed("pulse_tree"):
-		if gm.link_mode >= 0:
+		if not gm.is_mechanic_unlocked("pulse"):
+			gm.message_text = "Deep Root Pulse not yet available. Expand further!"
+			gm.message_timer = 2.0
+		elif gm.link_mode >= 0:
 			gm.cancel_link_mode()
 		elif gm.selected_tree_idx >= 0:
 			gm.deep_root_pulse(gm.selected_tree_idx)
@@ -253,7 +282,10 @@ func _input(event: InputEvent) -> void:
 
 	# ── Tree Linking ─────────────────────────────────────
 	if Input.is_action_just_pressed("link_tree"):
-		if gm.link_mode >= 0:
+		if not gm.is_mechanic_unlocked("link"):
+			gm.message_text = "Tree Linking not yet available. Expand further!"
+			gm.message_timer = 2.0
+		elif gm.link_mode >= 0:
 			# Already in link mode — pressing L again cancels
 			gm.cancel_link_mode()
 		elif gm.selected_tree_idx >= 0:
@@ -264,7 +296,10 @@ func _input(event: InputEvent) -> void:
 
 	# ── Tree Unlinking ───────────────────────────────────
 	if Input.is_action_just_pressed("unlink_tree"):
-		if gm.link_mode >= 0:
+		if not gm.is_mechanic_unlocked("unlink"):
+			gm.message_text = "Tree Unlinking not yet available. Expand further!"
+			gm.message_timer = 2.0
+		elif gm.link_mode >= 0:
 			gm.cancel_link_mode()
 		elif gm.selected_tree_idx >= 0:
 			gm.unlink_trees(gm.selected_tree_idx)
@@ -528,3 +563,29 @@ func _draw_zone_tints() -> void:
 		draw_rect(r, Color(0.0, 1.0, 0.0, 0.12), true)
 	for r: Rect2 in rival_rects:
 		draw_rect(r, Color(1.0, 0.15, 0.15, 0.18), true)
+
+
+# ═══════════════════════════════════════════════════════════════
+# DIFFICULTY MILESTONE DETECTION
+# ═══════════════════════════════════════════════════════════════
+
+func _check_difficulty_milestone(gm) -> void:
+	"""Show a milestone message when difficulty tier increases."""
+	var current_tier: int = gm.get_difficulty_tier()
+	if current_tier > _last_difficulty_tier:
+		var name: String = gm.get_difficulty_name()
+		var tier_msgs: Array[String] = [
+			"",  # Tier 0 = no message
+			"[Milestone] Your mycelium is spreading! Rivals accelerate.",
+			"[Milestone] Colonizing the forest! Rivals grow faster.",
+			"[Milestone] Dominating territory! Rivals are relentless.",
+			"[Milestone] Overgrowth! The forest trembles.",
+			"[Milestone] Conqueror! Can you take the entire grid?",
+		]
+		var msg: String = tier_msgs[current_tier] if current_tier < tier_msgs.size() else "New difficulty tier: %s!" % name
+		gm.message_text = msg
+		gm.message_timer = 3.0
+
+		# Also trigger a subtle screen shake for milestone feel
+		gm.request_screen_shake(0.15)
+		_last_difficulty_tier = current_tier

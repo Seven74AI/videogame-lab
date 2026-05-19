@@ -1,6 +1,7 @@
 # ═══════════════════════════════════════════════════════════════
-# ui_layer.gd — UILayer scene script (HUD redesign)
+# ui_layer.gd — UILayer scene script (HUD redesign + UX)
 # Resource bars, icons, tooltips, visual feedback
+# UX: Difficulty tier display, typed messages, milestone colors
 # ═══════════════════════════════════════════════════════════════
 extends CanvasLayer
 
@@ -71,6 +72,15 @@ var _message_fade: float = 0.0
 const FLASH_DURATION: float = 0.3
 const FLASH_COLOR: Color = Color(1.0, 1.0, 1.0, 1.0)
 
+# ── Message colors by type ─────────────────────────────────
+const MSG_COLORS: Dictionary = {
+	"info": Color(0.75, 0.85, 1.0, 1.0),     # Light blue
+	"warning": Color(1.0, 0.85, 0.3, 1.0),   # Gold
+	"success": Color(0.3, 1.0, 0.4, 1.0),    # Green
+	"error": Color(1.0, 0.3, 0.3, 1.0),      # Red
+	"milestone": Color(1.0, 0.6, 0.2, 1.0),  # Orange
+}
+
 
 func _ready() -> void:
 	var gm = get_node_or_null("/root/GameManager")
@@ -113,7 +123,6 @@ func _refresh_gp(gm) -> void:
 	_gp_label.text = "GP: %.1f (%s)" % [gp_val, _fmt_gp_rate(gp_rate)]
 
 	# GP bar: scale 0-50 (with color-coded threshold)
-	var ratio: float = _calc_bar_ratio(gp_val, 50.0)
 	_gp_bar.value = gp_val
 	_gp_bar.max_value = 50.0
 
@@ -163,9 +172,11 @@ func _refresh_resources(gm) -> void:
 
 
 func _refresh_territory(gm) -> void:
-	var total_cells: int = gm.GRID_W * gm.GRID_H
-	var pct: float = float(gm.player_cells.size()) / float(total_cells) * 100.0
-	_territory_label.text = "Territory: %.1f%%" % pct
+	var pct: float = gm.player_territory_pct()
+	var tier_name: String = gm.get_difficulty_name()
+	var rival_speed: float = gm.get_rival_speed_multiplier()
+
+	_territory_label.text = "Territory: %.1f%%  |  %s (×%.2f)" % [pct, tier_name, rival_speed]
 	_territory_bar.value = pct
 	_territory_bar.max_value = 100.0
 
@@ -295,6 +306,22 @@ func _on_message(msg: String) -> void:
 	_message_label.text = msg
 	_message_label.visible = true
 	_message_label.modulate = Color(0.95, 0.80, 0.25, 1.0)
+
+
+# ═══════════════════════════════════════════════════════════════
+# PUBLIC API: Typed message display
+# ═══════════════════════════════════════════════════════════════
+
+func show_typed_message(text: String, type: String = "info", duration: float = 2.0) -> void:
+	"""Show a color-coded message. Types: info, warning, success, error, milestone."""
+	var gm = get_node_or_null("/root/GameManager")
+	if gm:
+		gm.message_text = text
+		gm.message_timer = duration
+	var color: Color = MSG_COLORS.get(type, MSG_COLORS["info"])
+	_message_label.text = text
+	_message_label.add_theme_color_override("font_color", color)
+	_message_label.visible = true
 
 
 # ═══════════════════════════════════════════════════════════════

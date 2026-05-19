@@ -62,6 +62,11 @@ func setup_rivals() -> void:
 	var gm = get_node_or_null("/root/GameManager")
 	if gm == null: return
 
+	# ── Difficulty scaling ────────────────────────────────
+	var diff_mult: float = gm.get_rival_speed_multiplier()
+	var base_min: float = RIVAL_INTERVAL_MIN / diff_mult
+	var base_max: float = RIVAL_INTERVAL_MAX / diff_mult
+
 	var rival_configs: Array[Dictionary] = [
 		{
 			"personality": "aggressive",
@@ -105,7 +110,7 @@ func setup_rivals() -> void:
 		})
 
 	for _i: int in range(3):
-		rival_intervals.append(randf_range(RIVAL_INTERVAL_MIN, RIVAL_INTERVAL_MAX))
+		rival_intervals.append(randf_range(base_min, base_max))
 		rival_timers[_i] = rival_intervals[_i]
 
 	_setup_astar()
@@ -278,7 +283,11 @@ func rival_grow(rival_idx: int) -> void:
 	# ── Screen shake: rival grew near player territory ─────
 	_check_proximity_shake(best_cell, personality)
 
-	rival_intervals[rival_idx] = randf_range(RIVAL_INTERVAL_MIN, RIVAL_INTERVAL_MAX)
+	# ── Difficulty scaling: accelerate as player grows ──────
+	var diff_mult: float = gm.get_rival_speed_multiplier()
+	var bonus_gp: float = gm.get_rival_bonus_gp()
+	rival["gp"] += bonus_gp
+	rival_intervals[rival_idx] = randf_range(RIVAL_INTERVAL_MIN / diff_mult, RIVAL_INTERVAL_MAX / diff_mult)
 
 
 # ═══════════════════════════════════════════════════════════════

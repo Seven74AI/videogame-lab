@@ -54,6 +54,10 @@ func _ready() -> void:
 	# Init background particles
 	_init_particles()
 
+	# Connect particles draw signal
+	if not _particles_node.draw.is_connected(_on_particles_draw):
+		_particles_node.draw.connect(_on_particles_draw)
+
 	# Override controls text — it's set in tscn, but make it consistent
 	_controls_label.text = "[url=]Arrow keys: grow  |  Click: expand  |  1/2/3: trade  |  Tab: cycle tree  |  R: reset[/url]"
 

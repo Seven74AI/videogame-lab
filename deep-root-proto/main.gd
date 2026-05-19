@@ -3,6 +3,7 @@
 # Thin orchestration: input handling, delegates to autoloads.
 # GridLayer handles rendering, UILayer handles HUD.
 # Juice: Camera2D screen shake + ColorRect fade transitions
+#         + AudioListener2D spatial audio + camera animations
 # ═══════════════════════════════════════════════════════════════
 extends Node2D
 
@@ -27,12 +28,27 @@ var _shake_decay: float = 0.9
 enum FadeState { NONE, FADING_OUT, WAITING, FADING_IN }
 var _fade_state: int = FadeState.NONE
 var _fade_progress: float = 0.0
-const FADE_DURATION: float = 0.4
-const FADE_HOLD: float = 0.3  # Time to hold at full black while reset happens
+const FADE_DURATION: float = 0.5
+const FADE_HOLD: float = 0.35  # Time to hold at full black while reset happens
 var _fade_hold_timer: float = 0.0
+var _fade_ease_in: bool = true   # use cubic ease-in for fade-out, ease-out for fade-in
 
 # ── Title screen state ────────────────────────────────────
 var _game_started: bool = false
+
+# ── Camera animation state ────────────────────────────────
+var _camera_anim_time: float = 0.0
+const CAMERA_ANIM_DURATION: float = 0.9  # duration of the camera settle animation
+var _camera_anim_active: bool = false
+var _camera_start_zoom: Vector2 = Vector2(1.5, 1.5)
+var _camera_end_zoom: Vector2 = Vector2(1.0, 1.0)
+var _camera_center_pos: Vector2 = Vector2.ZERO  # target position after title
+
+# ── Game-over transition state ────────────────────────────
+var _game_over_transition: bool = false
+var _game_over_fade_timer: float = 0.0
+const GAME_OVER_FADE_DURATION: float = 0.7
+const GAME_OVER_HOLD: float = 1.2  # hold at black before showing end screen
 
 
 func _ready() -> void:
@@ -42,6 +58,18 @@ func _ready() -> void:
 		gm.screen_shake_requested.connect(_on_screen_shake_requested)
 	if not gm.reset_fade_requested.is_connected(_on_reset_fade_requested):
 		gm.reset_fade_requested.connect(_on_reset_fade_requested)
+
+	# ── Spatial audio: add AudioListener2D to camera ────────
+	var listener := AudioListener2D.new()
+	listener.name = "AudioListener2D"
+	_camera.add_child(listener)
+	AudioManager._listener = listener
+
+	# Compute camera center position (center of the grid in world coords)
+	_camera_center_pos = Vector2(
+		gm.GRID_W * gm.CELL_SIZE / 2.0,
+		gm.GRID_H * gm.CELL_SIZE / 2.0
+	)
 
 	# Init fade overlay: start fully black for title screen entrance
 	_fade_rect.modulate = Color(0, 0, 0, 1)
@@ -62,7 +90,7 @@ func _show_title_screen() -> void:
 
 
 func _on_start_game() -> void:
-	"""Called when title screen finishes fading out. Start the game with a fade-in."""
+	"""Called when title screen finishes fading out. Start the game with a fade-in + camera settle."""
 	GameManager.new_game()
 	AIManager.setup_rivals()
 	GameManager.game_ended.connect(_on_game_ended)
@@ -72,9 +100,16 @@ func _on_start_game() -> void:
 		_title_screen_instance.queue_free()
 		_title_screen_instance = null
 
+	# Start camera animation: zoomed out → settle to grid center
+	_camera.zoom = _camera_start_zoom
+	_camera.position = _camera_center_pos
+	_camera_anim_time = 0.0
+	_camera_anim_active = true
+
 	# Start fade-in from black (fade overlay is already fully black from title screen fade-out)
 	_fade_state = FadeState.FADING_IN
 	_fade_progress = 1.0
+	_fade_ease_in = false  # ease-out for fade-in
 	_game_started = true
 
 
@@ -86,6 +121,11 @@ func _process(delta: float) -> void:
 	if not _game_started:
 		# Still run fade transitions (game-start fade-in)
 		_update_fade(delta)
+		return
+
+	# ── Game-over transition ──────────────────────────────────
+	if _game_over_transition:
+		_update_game_over_fade(delta)
 		return
 
 	# ── Music state update ──────────────────────────────────
@@ -148,6 +188,9 @@ func _process(delta: float) -> void:
 
 	# ── Screen shake ───────────────────────────────────────
 	_update_screen_shake(delta)
+
+	# ── Camera animation (title → game settle) ─────────────
+	_update_camera_animation(delta)
 
 	# ── Fade transition ────────────────────────────────────
 	_update_fade(delta)
@@ -304,7 +347,9 @@ func _update_fade(delta: float) -> void:
 				GameManager.reset()
 				AIManager.setup_rivals()
 			else:
-				_fade_rect.modulate = Color(0, 0, 0, _fade_progress)
+				# Cubic ease-in (accelerating to black)
+				var eased: float = _ease_in_cubic(_fade_progress)
+				_fade_rect.modulate = Color(0, 0, 0, eased)
 
 		FadeState.WAITING:
 			_fade_hold_timer += delta
@@ -320,7 +365,81 @@ func _update_fade(delta: float) -> void:
 				_fade_overlay.visible = false
 				_fade_state = FadeState.NONE
 			else:
-				_fade_rect.modulate = Color(0, 0, 0, _fade_progress)
+				# Cubic ease-out (decelerating to clear)
+				var eased: float = _ease_out_cubic(_fade_progress)
+				_fade_rect.modulate = Color(0, 0, 0, eased)
+
+
+# ═══════════════════════════════════════════════════════════════
+# CAMERA ANIMATION (title → game settle)
+# ═══════════════════════════════════════════════════════════════
+
+func _update_camera_animation(delta: float) -> void:
+	if not _camera_anim_active:
+		return
+	_camera_anim_time += delta
+	var t: float = clampf(_camera_anim_time / CAMERA_ANIM_DURATION, 0.0, 1.0)
+	# Ease-out: zoom from 1.5x to 1.0x smoothly
+	var eased: float = _ease_out_cubic(t)
+	_camera.zoom = _camera_start_zoom.lerp(_camera_end_zoom, eased)
+	if t >= 1.0:
+		_camera_anim_active = false
+		_camera.zoom = _camera_end_zoom
+
+
+# ═══════════════════════════════════════════════════════════════
+# GAME OVER TRANSITION
+# ═══════════════════════════════════════════════════════════════
+
+func _on_game_ended(reason: String) -> void:
+	# Don't double-trigger
+	if _game_over_transition:
+		return
+	_game_over_transition = true
+	_game_over_fade_timer = 0.0
+	_fade_overlay.visible = true
+	_fade_rect.modulate = Color(0, 0, 0, 0)
+	# Stop music for dramatic effect
+	AudioManager.stop_all()
+
+
+func _update_game_over_fade(delta: float) -> void:
+	_game_over_fade_timer += delta
+	var fade_dur: float = GAME_OVER_FADE_DURATION
+	var total: float = fade_dur + GAME_OVER_HOLD
+
+	if _game_over_fade_timer < fade_dur:
+		# Fade to black
+		var t: float = clampf(_game_over_fade_timer / fade_dur, 0.0, 1.0)
+		_fade_rect.modulate = Color(0, 0, 0, _ease_in_cubic(t))
+	elif _game_over_fade_timer < total:
+		# Hold at black
+		_fade_rect.modulate = Color(0, 0, 0, 1)
+	else:
+		# Show end screen
+		if _end_screen_instance == null:
+			_end_screen_instance = _end_screen_scene.instantiate()
+			add_child(_end_screen_instance)
+		else:
+			_end_screen_instance.visible = true
+			var gm: GameManager = GameManager
+			if gm:
+				_end_screen_instance._on_game_ended(gm.game_over_reason)
+		# Fade overlay stays black behind the end screen
+		_game_over_transition = false  # Done
+
+
+# ═══════════════════════════════════════════════════════════════
+# EASING HELPERS
+# ═══════════════════════════════════════════════════════════════
+
+static func _ease_in_cubic(t: float) -> float:
+	return t * t * t
+
+
+static func _ease_out_cubic(t: float) -> float:
+	var f: float = 1.0 - t
+	return 1.0 - f * f * f
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -409,16 +528,3 @@ func _draw_zone_tints() -> void:
 		draw_rect(r, Color(0.0, 1.0, 0.0, 0.12), true)
 	for r: Rect2 in rival_rects:
 		draw_rect(r, Color(1.0, 0.15, 0.15, 0.18), true)
-
-
-func _on_game_ended(_reason: String) -> void:
-	if _end_screen_instance == null:
-		_end_screen_instance = _end_screen_scene.instantiate()
-		add_child(_end_screen_instance)
-	else:
-		# Re-show existing end screen on replay
-		_end_screen_instance.visible = true
-		# Re-trigger display update
-		var gm: GameManager = GameManager
-		if gm:
-			_end_screen_instance._on_game_ended(gm.game_over_reason)

@@ -1,6 +1,7 @@
 # ═══════════════════════════════════════════════════════════════
 # end_screen.gd — EndScreen CanvasLayer
 # Shows final stats, progress graph, replay button on game over.
+# Fade-in transition on game over with smooth alpha reveal.
 # ═══════════════════════════════════════════════════════════════
 extends CanvasLayer
 
@@ -15,16 +16,46 @@ extends CanvasLayer
 const GRAPH_WIDTH: int = 50
 const GRAPH_HEIGHT: int = 10
 
+# ── Fade-in state ────────────────────────────────────────
+var _fade_in_time: float = 0.0
+const FADE_IN_DURATION: float = 0.5
+var _fading_in: bool = false
+
 
 func _ready() -> void:
 	_replay_btn.pressed.connect(_on_replay_pressed)
 	_replay_btn.mouse_filter = Control.MOUSE_FILTER_STOP
+	# Start hidden (shown by fade-in on game over)
+	visible = false
+	_bg.modulate = Color(1, 1, 1, 0)
 	var gm = get_node_or_null("/root/GameManager")
 	if gm:
 		gm.game_ended.connect(_on_game_ended)
 		# If already game over (e.g. end_game called before scene loaded)
 		if gm.game_over:
 			_on_game_ended(gm.game_over_reason)
+
+
+func _process(delta: float) -> void:
+	if _fading_in:
+		_fade_in_time += delta
+		var t: float = clampf(_fade_in_time / FADE_IN_DURATION, 0.0, 1.0)
+		# Ease-out cubic
+		var f: float = 1.0 - t
+		var eased: float = 1.0 - f * f * f
+		_bg.modulate = Color(1, 1, 1, eased)
+		# Also fade labels
+		for child in $VBox.get_children():
+			if child is Label or child is RichTextLabel:
+				child.modulate = Color(1, 1, 1, eased)
+			elif child is Button:
+				child.modulate = Color(1, 1, 1, eased)
+		if t >= 1.0:
+			_fading_in = false
+			_bg.modulate = Color(1, 1, 1, 1)
+			for child in $VBox.get_children():
+				if child is Label or child is RichTextLabel or child is Button:
+					child.modulate = Color(1, 1, 1, 1)
 
 
 func _on_game_ended(reason: String) -> void:
@@ -46,8 +77,10 @@ func _on_game_ended(reason: String) -> void:
 	# Rivals comparison
 	_rivals_compare.text = _build_rivals_comparison(gm)
 
-	# Show
+	# Start fade-in
 	visible = true
+	_fading_in = true
+	_fade_in_time = 0.0
 
 
 func _build_final_stats(gm) -> String:
@@ -168,3 +201,6 @@ func _on_replay_pressed() -> void:
 	if gm:
 		gm.reset()
 	visible = false
+	_bg.modulate = Color(1, 1, 1, 0)
+	_fading_in = false
+	_fade_in_time = 0.0

@@ -145,8 +145,19 @@ func _preload_audio() -> void:
 # SFX
 # ═══════════════════════════════════════════════════════════════
 
+# AudioListener2D reference (set by Main scene after tree enters)
+var _listener: Node2D = null
+
+const SPATIAL_DECAY_DB: float = 1.2     # dB per 100px distance
+const SPATIAL_MAX_DISTANCE: float = 600.0 # Max audible distance in pixels
+const SPATIAL_REFERENCE_DISTANCE: float = 50.0  # Distance at which volume matches nominal
+
+
 func play_sfx(sfx_name: String, position: Vector2 = Vector2.ZERO) -> void:
-	"""Play a sound effect. Round-robin pool selection."""
+	"""Play a sound effect. Round-robin pool selection.
+	If position is provided (>1px from origin), applies spatial panning
+	relative to the AudioListener2D position.
+	"""
 	if _is_headless or _sfx_muted:
 		return
 
@@ -164,19 +175,28 @@ func play_sfx(sfx_name: String, position: Vector2 = Vector2.ZERO) -> void:
 
 	player.stream = _sfx_streams[sfx_name]
 	player.global_position = position
-	player.volume_db = SFX_VOLUMES.get(sfx_name, 0.0)
+
+	# Spatial attenuation: volume drops with distance from listener
+	var base_vol: float = SFX_VOLUMES.get(sfx_name, 0.0)
+	if position != Vector2.ZERO and _listener != null:
+		var dist: float = position.distance_to(_listener.global_position)
+		if dist > 1.0:
+			var attenuation: float = SPATIAL_DECAY_DB * (dist - SPATIAL_REFERENCE_DISTANCE) / 100.0
+			base_vol -= maxf(0.0, attenuation)
+	player.volume_db = base_vol
 	player.play()
 
 
-func play_sfx_at_cell(_cell: Vector2i, sfx_name: String) -> void:
-	"""Play SFX at grid cell position (world space)."""
-	# Cell position to world: cell * CELL_SIZE + half cell
-	# We don't import GameManager to avoid circular dependency;
-	# callers compute world position and pass to play_sfx.
-	# This convenience method is called from game_manager via helper.
+func play_sfx_at_cell(cell: Vector2i, sfx_name: String) -> void:
+	"""Play SFX at grid cell position — computes world-space coords."""
 	if _is_headless or _sfx_muted:
 		return
-	play_sfx(sfx_name, Vector2.ZERO)
+	var gm = get_node_or_null("/root/GameManager")
+	if gm == null:
+		play_sfx(sfx_name, Vector2.ZERO)
+		return
+	var world_pos: Vector2 = gm.cell_to_world(cell)
+	play_sfx(sfx_name, world_pos)
 
 
 # ═══════════════════════════════════════════════════════════════

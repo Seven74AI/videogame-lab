@@ -72,6 +72,7 @@ func _process(delta: float) -> void:
 func _refresh_tiles() -> void:
 	var gm = get_node_or_null("/root/GameManager")
 	if gm == null: return
+	if gm.grid.is_empty(): return
 
 	_tilemap.clear()
 	for y: int in range(gm.GRID_H):

@@ -21,6 +21,9 @@ var _end_screen_instance: CanvasLayer = null
 # ── Difficulty milestone tracking ─────────────────────────
 var _last_difficulty_tier: int = 0
 
+var _title_screen_scene: PackedScene = preload("res://scenes/title_screen.tscn")
+var _title_screen_instance: CanvasLayer = null
+
 # ── Screen shake state ────────────────────────────────────
 var _shake_intensity: float = 0.0
 var _shake_decay: float = 0.9
@@ -33,6 +36,9 @@ const FADE_DURATION: float = 0.4
 const FADE_HOLD: float = 0.3  # Time to hold at full black while reset happens
 var _fade_hold_timer: float = 0.0
 
+# ── Title screen state ────────────────────────────────────
+var _game_started: bool = false
+
 
 func _ready() -> void:
 	# Connect screen shake signal
@@ -42,10 +48,26 @@ func _ready() -> void:
 	if not gm.reset_fade_requested.is_connected(_on_reset_fade_requested):
 		gm.reset_fade_requested.connect(_on_reset_fade_requested)
 
-	# Init fade overlay: fully transparent
-	_fade_rect.modulate = Color(0, 0, 0, 0)
-	_fade_overlay.visible = false
+	# Init fade overlay: start fully black for title screen entrance
+	_fade_rect.modulate = Color(0, 0, 0, 1)
+	_fade_overlay.visible = true
 
+	# Show title screen — don't start game yet
+	_show_title_screen()
+
+
+# ═══════════════════════════════════════════════════════════════
+# TITLE SCREEN → GAMEPLAY TRANSITION
+# ═══════════════════════════════════════════════════════════════
+
+func _show_title_screen() -> void:
+	_title_screen_instance = _title_screen_scene.instantiate()
+	add_child(_title_screen_instance)
+	_title_screen_instance.start_game_pressed.connect(_on_start_game)
+
+
+func _on_start_game() -> void:
+	"""Called when title screen finishes fading out. Start the game with a fade-in."""
 	GameManager.new_game()
 	AIManager.setup_rivals()
 	GameManager.game_ended.connect(_on_game_ended)
@@ -54,12 +76,29 @@ func _ready() -> void:
 	var tm := get_node_or_null("/root/TutorialManager")
 	if tm:
 		tm.start_tutorial()
-	_last_difficulty_tier = gm.get_difficulty_tier()
+	var gm2: GameManager = GameManager
+	_last_difficulty_tier = gm2.get_difficulty_tier()
+
+	# Remove title screen
+	if _title_screen_instance != null:
+		_title_screen_instance.queue_free()
+		_title_screen_instance = null
+
+	# Start fade-in from black (fade overlay is already fully black from title screen fade-out)
+	_fade_state = FadeState.FADING_IN
+	_fade_progress = 1.0
+	_game_started = true
 
 
 func _process(delta: float) -> void:
 	var gm: GameManager = GameManager
 	var am: AIManager = AIManager
+
+	# Don't run game logic until game has started
+	if not _game_started:
+		# Still run fade transitions (game-start fade-in)
+		_update_fade(delta)
+		return
 
 	# ── Music state update ──────────────────────────────────
 	var rival_cell_count: int = 0
@@ -139,17 +178,17 @@ func _input(event: InputEvent) -> void:
 		return
 
 	# ── Tutorial: route input to TutorialManager ───────────
-	var tm := get_node_or_null("/root/TutorialManager")
-	if tm and tm.is_tutorial_active():
+	var tm2 := get_node_or_null("/root/TutorialManager")
+	if tm2 and tm2.is_tutorial_active():
 		if event is InputEventKey and event.pressed:
-			tm.advance_tutorial()
+			tm2.advance_tutorial()
 		elif event is InputEventMouseButton and event.pressed:
-			tm.advance_tutorial()
-		if tm.is_input_blocked():
+			tm2.advance_tutorial()
+		if tm2.is_input_blocked():
 			return  # Don't process game input during blocking tutorial steps
 
-	# Block input during fade/reset
-	if _fade_state != FadeState.NONE or gm.is_resetting:
+	# Block input during fade/reset AND before game has started
+	if _fade_state != FadeState.NONE or gm.is_resetting or not _game_started:
 		return
 
 	if event is InputEventMouseMotion:
@@ -337,6 +376,7 @@ func _draw() -> void:
 
 	if hover_cell.x < 0: return
 	var gm: GameManager = GameManager
+	if gm.grid.is_empty(): return
 	var rect := Rect2(
 		hover_cell.x * gm.CELL_SIZE, hover_cell.y * gm.CELL_SIZE,
 		gm.CELL_SIZE, gm.CELL_SIZE
@@ -379,6 +419,7 @@ func _draw_zone_tints() -> void:
 	"""Draw zone difficulty tints on all empty cells (persistent overlay)."""
 	var gm: GameManager = GameManager
 	if gm == null: return
+	if gm.grid.is_empty(): return
 
 	# Batch by zone color to minimize state changes
 	var border_rects: Array[Rect2] = []

@@ -1,0 +1,85 @@
+[gd_scene load_steps=2 format=3 uid="uid://deeproottitlescreen"]
+
+[ext_resource type="Script" path="res://scenes/title_screen.gd" id="1_ts"]
+
+[node name="TitleScreen" type="CanvasLayer"]
+script = ExtResource("1_ts")
+
+[node name="FadeOverlay" type="ColorRect" parent="."]
+offset_right = 1440.0
+offset_bottom = 960.0
+color = Color(0, 0, 0, 1)
+mouse_filter = 1
+
+[node name="BG" type="ColorRect" parent="."]
+offset_right = 1440.0
+offset_bottom = 960.0
+color = Color(0.06, 0.04, 0.02, 1)
+mouse_filter = 1
+
+[node name="Particles" type="Control" parent="."]
+offset_right = 1440.0
+offset_bottom = 960.0
+mouse_filter = 1
+
+[node name="VBox" type="VBoxContainer" parent="."]
+offset_left = 320.0
+offset_top = 140.0
+offset_right = 1120.0
+offset_bottom = 820.0
+alignment = 1
+mouse_filter = 1
+
+[node name="TitleLabel" type="Label" parent="VBox"]
+text = "DEEP ROOT"
+modulate = Color(0.95, 0.78, 0.15, 1)
+horizontal_alignment = 1
+mouse_filter = 1
+theme_override_font_sizes/font_size = 72
+
+[node name="SubtitleLabel" type="Label" parent="VBox"]
+text = "A Mycelium Strategy Game"
+modulate = Color(0.55, 0.45, 0.3, 0.9)
+horizontal_alignment = 1
+mouse_filter = 1
+theme_override_font_sizes/font_size = 18
+
+[node name="DecoLine" type="Label" parent="VBox"]
+text = "~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~"
+modulate = Color(0.4, 0.3, 0.15, 0.7)
+horizontal_alignment = 1
+mouse_filter = 1
+theme_override_font_sizes/font_size = 16
+
+[node name="Spacer1" type="Control" parent="VBox"]
+custom_minimum_size = Vector2(0, 60)
+mouse_filter = 1
+
+[node name="StartBtn" type="Button" parent="VBox"]
+text = "▶   NEW GAME"
+custom_minimum_size = Vector2(300, 64)
+modulate = Color(0.95, 0.78, 0.15, 1)
+theme_override_font_sizes/font_size = 24
+size_flags_horizontal = 4
+
+[node name="Spacer2" type="Control" parent="VBox"]
+custom_minimum_size = Vector2(0, 40)
+mouse_filter = 1
+
+[node name="ControlsLabel" type="Label" parent="VBox"]
+text = "Arrow keys: grow  |  Click: expand  |  1/2/3: trade"
+modulate = Color(0.4, 0.35, 0.28, 0.85)
+horizontal_alignment = 1
+mouse_filter = 1
+theme_override_font_sizes/font_size = 13
+
+[node name="VersionLabel" type="Label" parent="."]
+offset_left = 1330.0
+offset_top = 928.0
+offset_right = 1436.0
+offset_bottom = 956.0
+text = "proto v3"
+modulate = Color(0.3, 0.25, 0.18, 0.6)
+horizontal_alignment = 2
+mouse_filter = 1
+theme_override_font_sizes/font_size = 12

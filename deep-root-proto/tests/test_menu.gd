@@ -201,8 +201,8 @@ func test_particle_speed_range():
 	instance._init_particles()
 
 	for p: Dictionary in instance._particles:
-		assert_true(p["speed"] >= 8.0, "speed >= 8.0")
-		assert_true(p["speed"] <= 25.0, "speed <= 25.0")
+		assert_ge(p["speed"], 8.0, "speed >= 8.0")
+		assert_le(p["speed"], 25.0, "speed <= 25.0")
 
 	instance.free()
 

@@ -10,7 +10,7 @@ func test_tutorial_steps_exist():
 		if tm == null:
 		assert_not_null(tm, "TutorialManager autoload should exist")
 		return
-	assert_true(tm.STEPS.size() >= 5, "Should have at least 5 tutorial steps")
+	assert_ge(tm.STEPS.size(), 5, "Should have at least 5 tutorial steps")
 
 
 func test_tutorial_steps_have_ids():

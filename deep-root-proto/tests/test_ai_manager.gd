@@ -30,7 +30,7 @@ func test_phase_configs_all_personalities():
 		var cfg: Dictionary = am.PHASE_CONFIGS[personality]
 		var phases: Array = cfg["phases"]
 		var durations: Array = cfg["phase_durations"]
-		assert_true(phases.size() >= 2, "%s has >=2 phases" % personality)
+		assert_ge(phases.size(), 2, "%s has >=2 phases" % personality)
 		assert_eq(phases.size(), durations.size(), "%s phase/duration count match" % personality)
 
 
@@ -273,7 +273,7 @@ func test_setup_rivals_initial_state():
 
 	for rival: Dictionary in am.rivals:
 		assert_eq(rival["cells"].size(), 1, "rival starts with 1 cell")
-		assert_true(rival["gp"] >= 0.0, "rival has >= 0 GP")
+		assert_ge(rival["gp"], 0.0, "rival has >= 0 GP")
 		assert_eq(rival["absorbed"], 0, "rival absorbed = 0")
 		assert_eq(rival["phase_idx"], 0, "rival starts at phase 0")
 		assert_gt(rival["phase_timer"], 0.0, "phase_timer > 0")

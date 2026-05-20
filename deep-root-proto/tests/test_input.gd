@@ -5,21 +5,17 @@
 # Note: cannot test UI mouse_filter in headless (no CanvasLayer).
 #       ui_layer.tscn validation is in ci-validate.sh.
 # ═══════════════════════════════════════════════════════════════
-extends Node
-
-var _runner: Node
+extends GutTest
 
 
-func setup() -> void:
-	_runner = get_parent()
+func before_each() -> void:
 	GameManager.new_game()
 	AIManager.setup_rivals()
 
 
 # ── Mouse click → grow ────────────────────────────────────
 
-func test_click_empty_cell_grows() -> bool:
-	setup()
+func test_click_empty_cell_grows() -> void:
 	var gm = GameManager
 	var initial_count: int = gm.player_cells.size()
 
@@ -30,26 +26,24 @@ func test_click_empty_cell_grows() -> bool:
 			if target.x >= 0 and target.x < gm.GRID_W and target.y >= 0 and target.y < gm.GRID_H:
 				if gm.grid[target.y][target.x] == gm.CellType.EMPTY:
 					var ok: bool = gm.try_player_grow_to(target)
-					_runner.assert_true(ok, "grow to empty cell (%d,%d) should succeed" % [target.x, target.y])
-					_runner.assert_eq(gm.player_cells.size(), initial_count + 1, "cell count should increase")
-					_runner.assert_eq(gm.grid[target.y][target.x], gm.CellType.MYCELIUM, "cell should become MYCELIUM")
-					return true
-	_runner.assert_true(false, "no empty adjacent cell found — grid setup broken")
-	return false
+					assert_true(ok, "grow to empty cell (%d,%d) should succeed" % [target.x, target.y])
+					assert_eq(gm.player_cells.size(), initial_count + 1, "cell count should increase")
+					assert_eq(gm.grid[target.y][target.x], gm.CellType.MYCELIUM, "cell should become MYCELIUM")
+					return
+	assert_true(false, "no empty adjacent cell found — grid setup broken")
 
 
 # ── Click occupied cell → no-op ────────────────────────────
 
-func test_click_occupied_cell_does_nothing() -> bool:
-	setup()
+func test_click_occupied_cell_does_nothing() -> void:
 	var gm = GameManager
 	var initial_count: int = gm.player_cells.size()
 
 	# Click on player's own cell — should fail
 	var own_cell: Vector2i = gm.player_cells[0]
 	var ok: bool = gm.try_player_grow_to(own_cell)
-	_runner.assert_false(ok, "click on own cell should fail")
-	_runner.assert_eq(gm.player_cells.size(), initial_count, "cell count unchanged")
+	assert_false(ok, "click on own cell should fail")
+	assert_eq(gm.player_cells.size(), initial_count, "cell count unchanged")
 
 	var gp_before: float = gm.player_gp
 	# Click on a tree cell
@@ -61,18 +55,16 @@ func test_click_occupied_cell_does_nothing() -> bool:
 				if tx >= 0 and tx < gm.GRID_W and ty >= 0 and ty < gm.GRID_H:
 					if gm.grid[ty][tx] == gm.CellType.TREE:
 						ok = gm.try_player_grow_to(Vector2i(tx, ty))
-						_runner.assert_false(ok, "click on tree cell should not grow")
-						_runner.assert_eq(gm.player_gp, gp_before, "GP unchanged on invalid grow")
-						return true
-	return false
+						assert_false(ok, "click on tree cell should not grow")
+						assert_eq(gm.player_gp, gp_before, "GP unchanged on invalid grow")
+						return
 
 
 # ── Click tree → select ────────────────────────────────────
 
-func test_click_tree_selects() -> bool:
-	setup()
+func test_click_tree_selects() -> void:
 	var gm = GameManager
-	_runner.assert_eq(gm.selected_tree_idx, -1, "no tree selected initially")
+	assert_eq(gm.selected_tree_idx, -1, "no tree selected initially")
 
 	# Find a tree cell
 	for ti in range(gm.trees.size()):
@@ -82,38 +74,34 @@ func test_click_tree_selects() -> bool:
 			# The _input handler checks 3×3 area around tree
 			# Direct call: set selected_tree_idx
 			gm.selected_tree_idx = ti
-			_runner.assert_eq(gm.selected_tree_idx, ti, "tree %d selected via click" % ti)
-			return true
-	return false
+			assert_eq(gm.selected_tree_idx, ti, "tree %d selected via click" % ti)
+			return
 
 
 # ── Click out of bounds → no-op ────────────────────────────
 
-func test_click_out_of_bounds_fails() -> bool:
-	setup()
+func test_click_out_of_bounds_fails() -> void:
 	var gm = GameManager
 	var initial: int = gm.player_cells.size()
 
 	var ok: bool = gm.try_player_grow_to(Vector2i(-1, 0))
-	_runner.assert_false(ok, "negative x should fail")
+	assert_false(ok, "negative x should fail")
 
 	ok = gm.try_player_grow_to(Vector2i(0, -1))
-	_runner.assert_false(ok, "negative y should fail")
+	assert_false(ok, "negative y should fail")
 
 	ok = gm.try_player_grow_to(Vector2i(gm.GRID_W, 0))
-	_runner.assert_false(ok, "x >= GRID_W should fail")
+	assert_false(ok, "x >= GRID_W should fail")
 
 	ok = gm.try_player_grow_to(Vector2i(0, gm.GRID_H))
-	_runner.assert_false(ok, "y >= GRID_H should fail")
+	assert_false(ok, "y >= GRID_H should fail")
 
-	_runner.assert_eq(gm.player_cells.size(), initial, "cell count unchanged")
-	return true
+	assert_eq(gm.player_cells.size(), initial, "cell count unchanged")
 
 
 # ── GP cost enforcement ────────────────────────────────────
 
-func test_click_without_gp_fails() -> bool:
-	setup()
+func test_click_without_gp_fails() -> void:
 	var gm = GameManager
 	gm.player_gp = 1.0  # Not enough for GROWTH_COST (5.0)
 	var initial: int = gm.player_cells.size()
@@ -125,16 +113,14 @@ func test_click_without_gp_fails() -> bool:
 			if target.x >= 0 and target.x < gm.GRID_W and target.y >= 0 and target.y < gm.GRID_H:
 				if gm.grid[target.y][target.x] == gm.CellType.EMPTY:
 					var ok: bool = gm.try_player_grow_to(target)
-					_runner.assert_false(ok, "grow with insufficient GP should fail")
-					_runner.assert_eq(gm.player_cells.size(), initial, "cell count unchanged")
-					return true
-	return false
+					assert_false(ok, "grow with insufficient GP should fail")
+					assert_eq(gm.player_cells.size(), initial, "cell count unchanged")
+					return
 
 
 # ── Click non-adjacent cell fails ──────────────────────────
 
-func test_click_far_cell_fails() -> bool:
-	setup()
+func test_click_far_cell_fails() -> void:
 	var gm = GameManager
 	var initial: int = gm.player_cells.size()
 	gm.player_gp = 999.0  # Enough GP
@@ -153,31 +139,27 @@ func test_click_far_cell_fails() -> bool:
 					break
 			if not adjacent:
 				var ok: bool = gm.try_player_grow_to(far)
-				_runner.assert_false(ok, "click on non-adjacent cell (%d,%d) should fail" % [x, y])
-				_runner.assert_eq(gm.player_cells.size(), initial, "cell count unchanged")
-				return true
-	_runner.assert_true(false, "no far empty cell found")
-	return false
+				assert_false(ok, "click on non-adjacent cell (%d,%d) should fail" % [x, y])
+				assert_eq(gm.player_cells.size(), initial, "cell count unchanged")
+				return
+	assert_true(false, "no far empty cell found")
 
 
 # ── Tree regen integration ─────────────────────────────────
 
-func test_trees_have_regen_timer() -> bool:
+func test_trees_have_regen_timer() -> void:
 	""" After new_game(), every tree must have a regen_timer field """
-	setup()
 	var gm = GameManager
-	_runner.assert_gt(gm.trees.size(), 0, "game must have trees")
+	assert_gt(gm.trees.size(), 0, "game must have trees")
 
 	const REGEN_INTERVAL: float = 60.0
 	for tree in gm.trees:
-		_runner.assert_true(tree.has("regen_timer"), "tree must have regen_timer field")
-		_runner.assert_ge(tree["regen_timer"], 0.0, "regen_timer must be non-negative")
-	return true
+		assert_true(tree.has("regen_timer"), "tree must have regen_timer field")
+		assert_true(tree["regen_timer"] >= 0.0, "regen_timer must be non-negative")
 
 
-func test_tree_regen_functional() -> bool:
+func test_tree_regen_functional() -> void:
 	""" Simulate real regen: depleted tree gets trade back after timer """
-	setup()
 	var gm = GameManager
 
 	# Deplete a tree completely
@@ -194,16 +176,14 @@ func test_tree_regen_functional() -> bool:
 	# All trees should now have 1 trade
 	for ti in range(gm.trees.size()):
 		var tree = gm.trees[ti]
-		_runner.assert_eq(tree["trades_left"], 1, "tree %d should regen to 1 after depletion" % ti)
-	return true
+		assert_eq(tree["trades_left"], 1, "tree %d should regen to 1 after depletion" % ti)
 
 
 # ═══════════════════════════════════════════════════════════════
 # Deep Root Pulse integration tests
 # ═══════════════════════════════════════════════════════════════
 
-func test_pulse_exhausted_tree_regens() -> bool:
-	setup()
+func test_pulse_exhausted_tree_regens() -> void:
 	var gm = GameManager
 
 	# Exhaust a tree
@@ -213,14 +193,12 @@ func test_pulse_exhausted_tree_regens() -> bool:
 	var before_trades: int = gm.trees[0]["trades_left"]
 	gm.deep_root_pulse(0)
 
-	_runner.assert_eq(gm.player_gp, 5.0, "GP: 20 - 15 = 5 after pulse")
-	_runner.assert_eq(gm.trees[0]["trades_left"], 3, "Trades regenerated to 3")
-	_runner.assert_ne(before_trades, gm.trees[0]["trades_left"], "Trades changed from 0")
-	return true
+	assert_eq(gm.player_gp, 5.0, "GP: 20 - 15 = 5 after pulse")
+	assert_eq(gm.trees[0]["trades_left"], 3, "Trades regenerated to 3")
+	assert_ne(before_trades, gm.trees[0]["trades_left"], "Trades changed from 0")
 
 
-func test_pulse_blocked_if_tree_has_trades() -> bool:
-	setup()
+func test_pulse_blocked_if_tree_has_trades() -> void:
 	var gm = GameManager
 	gm.trees[0]["trades_left"] = 2
 	gm.player_gp = 20.0
@@ -229,13 +207,11 @@ func test_pulse_blocked_if_tree_has_trades() -> bool:
 
 	gm.deep_root_pulse(0)
 
-	_runner.assert_eq(gm.player_gp, gp_before, "GP unchanged when pulse blocked")
-	_runner.assert_eq(gm.trees[0]["trades_left"], trades_before, "Trades unchanged")
-	return true
+	assert_eq(gm.player_gp, gp_before, "GP unchanged when pulse blocked")
+	assert_eq(gm.trees[0]["trades_left"], trades_before, "Trades unchanged")
 
 
-func test_pulse_blocked_insufficient_gp() -> bool:
-	setup()
+func test_pulse_blocked_insufficient_gp() -> void:
 	var gm = GameManager
 	gm.trees[0]["trades_left"] = 0
 	gm.player_gp = 5.0
@@ -243,17 +219,15 @@ func test_pulse_blocked_insufficient_gp() -> bool:
 
 	gm.deep_root_pulse(0)
 
-	_runner.assert_eq(gm.player_gp, gp_before, "GP unchanged when can't afford")
-	_runner.assert_eq(gm.trees[0]["trades_left"], 0, "Trades still 0")
-	return true
+	assert_eq(gm.player_gp, gp_before, "GP unchanged when can't afford")
+	assert_eq(gm.trees[0]["trades_left"], 0, "Trades still 0")
 
 
 # ═══════════════════════════════════════════════════════════════
 # Tree Linking integration tests
 # ═══════════════════════════════════════════════════════════════
 
-func test_link_two_exhausted_trees() -> bool:
-	setup()
+func test_link_two_exhausted_trees() -> void:
 	var gm = GameManager
 
 	# Exhaust both trees
@@ -262,28 +236,24 @@ func test_link_two_exhausted_trees() -> bool:
 
 	gm.link_trees(0, 1)
 
-	_runner.assert_eq(gm.trees[0]["linked_to"], 1, "Tree 0 linked to 1")
-	_runner.assert_eq(gm.trees[1]["linked_to"], 0, "Tree 1 linked to 0")
-	_runner.assert_eq(gm.trees[0]["trades_left"], 6, "Tree 0: +6 trades")
-	_runner.assert_eq(gm.trees[1]["trades_left"], 6, "Tree 1: +6 trades")
-	_runner.assert_eq(gm.link_mode, -1, "Link mode cleared after linking")
-	return true
+	assert_eq(gm.trees[0]["linked_to"], 1, "Tree 0 linked to 1")
+	assert_eq(gm.trees[1]["linked_to"], 0, "Tree 1 linked to 0")
+	assert_eq(gm.trees[0]["trades_left"], 6, "Tree 0: +6 trades")
+	assert_eq(gm.trees[1]["trades_left"], 6, "Tree 1: +6 trades")
+	assert_eq(gm.link_mode, -1, "Link mode cleared after linking")
 
 
-func test_link_blocked_self_link() -> bool:
-	setup()
+func test_link_blocked_self_link() -> void:
 	var gm = GameManager
 	gm.trees[0]["trades_left"] = 0
 
 	gm.link_trees(0, 0)
 
-	_runner.assert_eq(gm.trees[0]["linked_to"], -1, "Tree not linked to itself")
-	_runner.assert_eq(gm.link_mode, -1, "Link mode cleared")
-	return true
+	assert_eq(gm.trees[0]["linked_to"], -1, "Tree not linked to itself")
+	assert_eq(gm.link_mode, -1, "Link mode cleared")
 
 
-func test_link_blocked_already_linked() -> bool:
-	setup()
+func test_link_blocked_already_linked() -> void:
 	var gm = GameManager
 	gm.trees[0]["trades_left"] = 0
 	gm.trees[1]["trades_left"] = 0
@@ -291,17 +261,15 @@ func test_link_blocked_already_linked() -> bool:
 
 	# First link: 0 ↔ 1
 	gm.link_trees(0, 1)
-	_runner.assert_eq(gm.trees[0]["linked_to"], 1, "First link OK")
+	assert_eq(gm.trees[0]["linked_to"], 1, "First link OK")
 
 	# Try linking 0 to 2 (0 is already linked)
 	gm.link_trees(0, 2)
-	_runner.assert_eq(gm.trees[0]["linked_to"], 1, "Still linked to 1, not 2")
-	_runner.assert_eq(gm.trees[2]["linked_to"], -1, "Tree 2 still unlinked")
-	return true
+	assert_eq(gm.trees[0]["linked_to"], 1, "Still linked to 1, not 2")
+	assert_eq(gm.trees[2]["linked_to"], -1, "Tree 2 still unlinked")
 
 
-func test_unlink_removes_bonus_capped() -> bool:
-	setup()
+func test_unlink_removes_bonus_capped() -> void:
 	var gm = GameManager
 	gm.trees[0]["trades_left"] = 0
 	gm.trees[1]["trades_left"] = 0
@@ -315,15 +283,13 @@ func test_unlink_removes_bonus_capped() -> bool:
 
 	gm.unlink_trees(0)
 
-	_runner.assert_eq(gm.trees[0]["linked_to"], -1, "Tree 0 unlinked")
-	_runner.assert_eq(gm.trees[1]["linked_to"], -1, "Tree 1 unlinked")
-	_runner.assert_eq(gm.trees[0]["trades_left"], 2, "Tree 0: 8-6=2 after unlink")
-	_runner.assert_eq(gm.trees[1]["trades_left"], 0, "Tree 1: 2-2=0 (capped) after unlink")
-	return true
+	assert_eq(gm.trees[0]["linked_to"], -1, "Tree 0 unlinked")
+	assert_eq(gm.trees[1]["linked_to"], -1, "Tree 1 unlinked")
+	assert_eq(gm.trees[0]["trades_left"], 2, "Tree 0: 8-6=2 after unlink")
+	assert_eq(gm.trees[1]["trades_left"], 0, "Tree 1: 2-2=0 (capped) after unlink")
 
 
-func test_unlink_not_linked_tree() -> bool:
-	setup()
+func test_unlink_not_linked_tree() -> void:
 	var gm = GameManager
 	gm.trees[0]["linked_to"] = -1
 	gm.trees[0]["trades_left"] = 3
@@ -331,31 +297,26 @@ func test_unlink_not_linked_tree() -> bool:
 
 	gm.unlink_trees(0)
 
-	_runner.assert_eq(gm.trees[0]["linked_to"], -1, "Still unlinked")
-	_runner.assert_eq(gm.trees[0]["trades_left"], trades_before, "Trades unchanged")
-	return true
+	assert_eq(gm.trees[0]["linked_to"], -1, "Still unlinked")
+	assert_eq(gm.trees[0]["trades_left"], trades_before, "Trades unchanged")
 
 
-func test_link_mode_flow() -> bool:
-	setup()
+func test_link_mode_flow() -> void:
 	var gm = GameManager
 	gm.trees[0]["trades_left"] = 0
 
-	_runner.assert_eq(gm.link_mode, -1, "Not in link mode initially")
+	assert_eq(gm.link_mode, -1, "Not in link mode initially")
 
 	gm.enter_link_mode(0)
-	_runner.assert_eq(gm.link_mode, 0, "In link mode for tree 0")
+	assert_eq(gm.link_mode, 0, "In link mode for tree 0")
 
 	gm.cancel_link_mode()
-	_runner.assert_eq(gm.link_mode, -1, "Link mode cancelled")
-	return true
+	assert_eq(gm.link_mode, -1, "Link mode cancelled")
 
 
-func test_enter_link_mode_blocked_if_has_trades() -> bool:
-	setup()
+func test_enter_link_mode_blocked_if_has_trades() -> void:
 	var gm = GameManager
 	gm.trees[0]["trades_left"] = 3
 
 	gm.enter_link_mode(0)
-	_runner.assert_eq(gm.link_mode, -1, "Link mode not entered — tree has trades")
-	return true
+	assert_eq(gm.link_mode, -1, "Link mode not entered — tree has trades")

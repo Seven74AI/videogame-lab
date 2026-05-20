@@ -2,7 +2,7 @@
 # test_end_screen.gd — Tests for end screen, game over, history
 # Uses the real GameManager autoload singleton.
 # ═══════════════════════════════════════════════════════════════
-extends Node
+extends GutTest
 
 const GRID_W: int = 60
 const GRID_H: int = 40
@@ -11,11 +11,6 @@ enum CellType {
 	EMPTY, WATER, MINERAL, SUGAR, TREE,
 	MYCELIUM, RIVAL_RED, RIVAL_ORANGE, RIVAL_VIOLET
 }
-
-
-func _runner():
-	return get_parent()
-
 
 func _setup_controlled_grid(gm) -> void:
 	"""Reset GM to a clean empty grid for controlled testing."""
@@ -48,7 +43,6 @@ func _setup_controlled_grid(gm) -> void:
 		gm.grid.append(row)
 		gm.grid_resources.append(res_row)
 
-
 func test_is_grid_full_empty_grid() -> bool:
 	"""Grid with EMPTY cells should NOT be full"""
 	var gm = get_node_or_null("/root/GameManager")
@@ -57,10 +51,8 @@ func test_is_grid_full_empty_grid() -> bool:
 	gm.grid[10][10] = CellType.MYCELIUM
 	gm.grid[20][20] = CellType.WATER
 
-	var r = _runner()
-	r.assert_false(gm.is_grid_full(), "Grid with empty cells = not full")
+	assert_false(gm.is_grid_full(), "Grid with empty cells = not full")
 	return true
-
 
 func test_is_grid_full_completely_filled() -> bool:
 	"""Fully filled grid should be detected as full"""
@@ -71,10 +63,8 @@ func test_is_grid_full_completely_filled() -> bool:
 		for x: int in range(gm.GRID_W):
 			gm.grid[y][x] = CellType.MYCELIUM
 
-	var r = _runner()
-	r.assert_true(gm.is_grid_full(), "Completely filled grid = full")
+	assert_true(gm.is_grid_full(), "Completely filled grid = full")
 	return true
-
 
 func test_is_player_dead_with_cells_and_space() -> bool:
 	"""Player with cells and growth space is NOT dead"""
@@ -84,10 +74,8 @@ func test_is_player_dead_with_cells_and_space() -> bool:
 	gm.player_cells.append(Vector2i(30, 20))
 	gm.grid[20][30] = CellType.MYCELIUM
 
-	var r = _runner()
-	r.assert_false(gm.is_player_dead(), "Player with growth space = alive")
+	assert_false(gm.is_player_dead(), "Player with growth space = alive")
 	return true
-
 
 func test_is_player_dead_no_cells() -> bool:
 	"""Player with no cells IS dead"""
@@ -96,10 +84,8 @@ func test_is_player_dead_no_cells() -> bool:
 	_setup_controlled_grid(gm)
 	# player_cells already empty from _setup_controlled_grid
 
-	var r = _runner()
-	r.assert_true(gm.is_player_dead(), "No player cells = dead")
+	assert_true(gm.is_player_dead(), "No player cells = dead")
 	return true
-
 
 func test_is_player_dead_surrounded() -> bool:
 	"""Player surrounded with no growth space IS dead"""
@@ -118,10 +104,8 @@ func test_is_player_dead_surrounded() -> bool:
 			if nx >= 0 and nx < gm.GRID_W and ny >= 0 and ny < gm.GRID_H:
 				gm.grid[ny][nx] = CellType.WATER
 
-	var r = _runner()
-	r.assert_true(gm.is_player_dead(), "Surrounded player = dead")
+	assert_true(gm.is_player_dead(), "Surrounded player = dead")
 	return true
-
 
 func test_end_game_sets_state() -> bool:
 	"""end_game() should set game_over, reason, and record history"""
@@ -133,12 +117,10 @@ func test_end_game_sets_state() -> bool:
 
 	gm.end_game("test_reason")
 
-	var r = _runner()
-	r.assert_true(gm.game_over, "game_over=true after end_game")
-	r.assert_eq(gm.game_over_reason, "test_reason", "reason set correctly")
-	r.assert_gt(gm.history.size(), 0, "History has at least final snapshot")
+	assert_true(gm.game_over, "game_over=true after end_game")
+	assert_eq(gm.game_over_reason, "test_reason", "reason set correctly")
+	assert_gt(gm.history.size(), 0, "History has at least final snapshot")
 	return true
-
 
 func test_end_game_idempotent() -> bool:
 	"""Calling end_game twice should not double-record"""
@@ -152,11 +134,9 @@ func test_end_game_idempotent() -> bool:
 	var hist_size: int = gm.history.size()
 	gm.end_game("second")
 
-	var r = _runner()
-	r.assert_eq(gm.history.size(), hist_size, "Second end_game does not add history")
-	r.assert_eq(gm.game_over_reason, "first", "Reason stays as first")
+	assert_eq(gm.history.size(), hist_size, "Second end_game does not add history")
+	assert_eq(gm.game_over_reason, "first", "Reason stays as first")
 	return true
-
 
 func test_check_game_over_grid_full() -> bool:
 	"""check_game_over() should detect full grid"""
@@ -172,11 +152,9 @@ func test_check_game_over_grid_full() -> bool:
 
 	gm.check_game_over()
 
-	var r = _runner()
-	r.assert_true(gm.game_over, "check_game_over detects full grid")
-	r.assert_eq(gm.game_over_reason, "grid_full", "reason=grid_full")
+	assert_true(gm.game_over, "check_game_over detects full grid")
+	assert_eq(gm.game_over_reason, "grid_full", "reason=grid_full")
 	return true
-
 
 func test_check_game_over_player_died() -> bool:
 	"""check_game_over() should detect dead player"""
@@ -187,11 +165,9 @@ func test_check_game_over_player_died() -> bool:
 
 	gm.check_game_over()
 
-	var r = _runner()
-	r.assert_true(gm.game_over, "check_game_over detects dead player")
-	r.assert_eq(gm.game_over_reason, "player_died", "reason=player_died")
+	assert_true(gm.game_over, "check_game_over detects dead player")
+	assert_eq(gm.game_over_reason, "player_died", "reason=player_died")
 	return true
-
 
 func test_history_records_snapshots() -> bool:
 	"""History should record snapshots with proper fields"""
@@ -204,16 +180,14 @@ func test_history_records_snapshots() -> bool:
 	gm.history.clear()
 	gm._record_history_snapshot()
 
-	var r = _runner()
-	r.assert_eq(gm.history.size(), 1, "One snapshot recorded")
+	assert_eq(gm.history.size(), 1, "One snapshot recorded")
 	var snap: Dictionary = gm.history[0]
-	r.assert_eq(snap["player_cells"], gm.player_cells.size(), "player_cells in snapshot")
-	r.assert_true(snap.has("player_gp"), "player_gp in snapshot")
-	r.assert_true(snap.has("player_absorbed"), "player_absorbed in snapshot")
-	r.assert_true(snap.has("player_sugars"), "player_sugars in snapshot")
-	r.assert_eq(snap["rival_cells"].size(), 3, "3 rival counts in snapshot")
+	assert_eq(snap["player_cells"], gm.player_cells.size(), "player_cells in snapshot")
+	assert_true(snap.has("player_gp"), "player_gp in snapshot")
+	assert_true(snap.has("player_absorbed"), "player_absorbed in snapshot")
+	assert_true(snap.has("player_sugars"), "player_sugars in snapshot")
+	assert_eq(snap["rival_cells"].size(), 3, "3 rival counts in snapshot")
 	return true
-
 
 func test_reset_clears_game_over() -> bool:
 	"""reset() should clear game_over state and reinitialize history"""
@@ -224,40 +198,35 @@ func test_reset_clears_game_over() -> bool:
 	gm.grid[20][30] = CellType.MYCELIUM
 
 	gm.end_game("test")
-	var r1 = _runner()
-	r1.assert_true(gm.game_over, "game_over set before reset")
+	assert_true(gm.game_over, "game_over set before reset")
 
 	gm.reset()
-	var r2 = _runner()
-	r2.assert_false(gm.game_over, "game_over=false after reset")
-	r2.assert_eq(gm.game_over_reason, "", "reason cleared after reset")
-	r2.assert_gt(gm.history.size(), 0, "History has initial snapshot after reset")
+	assert_false(gm.game_over, "game_over=false after reset")
+	assert_eq(gm.game_over_reason, "", "reason cleared after reset")
+	assert_gt(gm.history.size(), 0, "History has initial snapshot after reset")
 	return true
-
 
 func test_end_screen_scene_loadable() -> bool:
 	"""End screen scene should be loadable with all required nodes"""
-	var r = _runner()
-	r.assert_true(ResourceLoader.exists("res://scenes/end_screen.tscn"), "end_screen.tscn exists")
-	r.assert_true(ResourceLoader.exists("res://scenes/end_screen.gd"), "end_screen.gd exists")
+	assert_true(ResourceLoader.exists("res://scenes/end_screen.tscn"), "end_screen.tscn exists")
+	assert_true(ResourceLoader.exists("res://scenes/end_screen.gd"), "end_screen.gd exists")
 	if ResourceLoader.exists("res://scenes/end_screen.tscn"):
 		var scene: PackedScene = load("res://scenes/end_screen.tscn")
-		r.assert_not_null(scene, "end_screen.tscn loadable")
+		assert_not_null(scene, "end_screen.tscn loadable")
 		var instance: CanvasLayer = scene.instantiate()
-		r.assert_not_null(instance, "end_screen instance created")
+		assert_not_null(instance, "end_screen instance created")
 		# Verify all required child nodes exist
-		r.assert_not_null(instance.get_node_or_null("BG"), "BG node exists")
-		r.assert_not_null(instance.get_node_or_null("Panel"), "Panel node exists")
-		r.assert_not_null(instance.get_node_or_null("Panel/Margin/VBox/Title"), "Title exists")
-		r.assert_not_null(instance.get_node_or_null("Panel/Margin/VBox/Reason"), "Reason exists")
-		r.assert_not_null(instance.get_node_or_null("Panel/Margin/VBox/SummarySection/SummaryText"), "SummaryText exists")
-		r.assert_not_null(instance.get_node_or_null("Panel/Margin/VBox/ChartsRow/ResourceChart"), "ResourceChart exists")
-		r.assert_not_null(instance.get_node_or_null("Panel/Margin/VBox/ChartsRow/ProgressChart"), "ProgressChart exists")
-		r.assert_not_null(instance.get_node_or_null("Panel/Margin/VBox/RivalsSection/RivalsGrid"), "RivalsGrid exists")
-		r.assert_not_null(instance.get_node_or_null("Panel/Margin/VBox/ReplayBtn"), "ReplayBtn exists")
+		assert_not_null(instance.get_node_or_null("BG"), "BG node exists")
+		assert_not_null(instance.get_node_or_null("Panel"), "Panel node exists")
+		assert_not_null(instance.get_node_or_null("Panel/Margin/VBox/Title"), "Title exists")
+		assert_not_null(instance.get_node_or_null("Panel/Margin/VBox/Reason"), "Reason exists")
+		assert_not_null(instance.get_node_or_null("Panel/Margin/VBox/SummarySection/SummaryText"), "SummaryText exists")
+		assert_not_null(instance.get_node_or_null("Panel/Margin/VBox/ChartsRow/ResourceChart"), "ResourceChart exists")
+		assert_not_null(instance.get_node_or_null("Panel/Margin/VBox/ChartsRow/ProgressChart"), "ProgressChart exists")
+		assert_not_null(instance.get_node_or_null("Panel/Margin/VBox/RivalsSection/RivalsGrid"), "RivalsGrid exists")
+		assert_not_null(instance.get_node_or_null("Panel/Margin/VBox/ReplayBtn"), "ReplayBtn exists")
 		instance.queue_free()
 	return true
-
 
 func test_build_run_summary_generates_text() -> bool:
 	"""Run summary should generate non-empty text with stats"""
@@ -281,13 +250,11 @@ func test_build_run_summary_generates_text() -> bool:
 	add_child(instance)
 	var summary: String = instance._build_run_summary(gm)
 
-	var r = _runner()
-	r.assert_true(summary.length() > 0, "Summary is not empty")
-	r.assert_true("2" in summary, "Summary mentions cell count")  # 2 cells
-	r.assert_true("5" in summary, "Summary mentions absorbed count")
+	assert_true(summary.length() > 0, "Summary is not empty")
+	assert_true("2" in summary, "Summary mentions cell count")  # 2 cells
+	assert_true("5" in summary, "Summary mentions absorbed count")
 	instance.queue_free()
 	return true
-
 
 func test_run_summary_includes_performance_tier() -> bool:
 	"""Run summary should include a performance tier"""
@@ -307,12 +274,10 @@ func test_run_summary_includes_performance_tier() -> bool:
 	add_child(instance)
 	var summary: String = instance._build_run_summary(gm)
 
-	var r = _runner()
-	r.assert_true("LEGENDARY" in summary, "200 cells = legendary tier, found LEGENDARY in summary")
-	r.assert_true("TROPHY" in summary, "Legendary tier has trophy icon")
+	assert_true("LEGENDARY" in summary, "200 cells = legendary tier, found LEGENDARY in summary")
+	assert_true("TROPHY" in summary, "Legendary tier has trophy icon")
 	instance.queue_free()
 	return true
-
 
 func test_end_screen_visible_on_game_over() -> bool:
 	"""End screen should become visible when game ends — test via tree-attached instance"""
@@ -333,7 +298,6 @@ func test_end_screen_visible_on_game_over() -> bool:
 	gm.game_over = false  # Reset so end_game doesn't bail
 	gm.end_game("test_reason")
 
-	var r = _runner()
-	r.assert_true(instance.visible, "End screen visible after game over")
+	assert_true(instance.visible, "End screen visible after game over")
 	instance.queue_free()
 	return true

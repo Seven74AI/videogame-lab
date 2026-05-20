@@ -4,51 +4,43 @@
 # ═══════════════════════════════════════════════════════════════
 extends GutTest
 
-func _runner():
-	return get_parent()
 
 
 # ── Bar progress ratio ────────────────────────────────────
 
 func test_bar_ratio_full() -> bool:
 	""" Bar ratio returns 1.0 when current equals max """
-	var r = _runner()
-	r.assert_eq(_calc_bar_ratio(100.0, 100.0), 1.0, "full bar ratio")
+	assert_eq(_calc_bar_ratio(100.0, 100.0), 1.0, "full bar ratio")
 	return true
 
 
 func test_bar_ratio_empty() -> bool:
 	""" Bar ratio returns 0.0 when current is 0 """
-	var r = _runner()
-	r.assert_eq(_calc_bar_ratio(0.0, 100.0), 0.0, "empty bar ratio")
+	assert_eq(_calc_bar_ratio(0.0, 100.0), 0.0, "empty bar ratio")
 	return true
 
 
 func test_bar_ratio_half() -> bool:
 	""" Bar ratio returns 0.5 for half """
-	var r = _runner()
-	r.assert_eq(_calc_bar_ratio(50.0, 100.0), 0.5, "half bar ratio")
+	assert_eq(_calc_bar_ratio(50.0, 100.0), 0.5, "half bar ratio")
 	return true
 
 
 func test_bar_ratio_clamped_zero() -> bool:
 	""" Bar ratio clamps negative values to 0 """
-	var r = _runner()
-	r.assert_eq(_calc_bar_ratio(-10.0, 100.0), 0.0, "negative clamps to 0")
+	assert_eq(_calc_bar_ratio(-10.0, 100.0), 0.0, "negative clamps to 0")
 	return true
 
 
 func test_bar_ratio_clamped_max() -> bool:
 	""" Bar ratio clamps values exceeding max to 1 """
-	var r = _runner()
-	r.assert_eq(_calc_bar_ratio(150.0, 100.0), 1.0, "overflow clamps to 1")
+	assert_eq(_calc_bar_ratio(150.0, 100.0), 1.0, "overflow clamps to 1")
 	return true
 
 
 func test_bar_ratio_zero_max() -> bool:
 	""" Bar ratio returns 0 when max is 0 (avoid division by zero) """
-	var r = _runner()
-	r.assert_eq(_calc_bar_ratio(0.0, 0.0), 0.0, "zero max returns 0")
+	assert_eq(_calc_bar_ratio(0.0, 0.0), 0.0, "zero max returns 0")
 	return true
 
 
@@ -56,29 +48,25 @@ func test_bar_ratio_zero_max() -> bool:
 
 func test_fmt_gp_rate_positive() -> bool:
 	""" GP rate formats with two decimals """
-	var r = _runner()
-	r.assert_eq(_fmt_gp_rate(0.37), "+0.37/s", "positive rate")
+	assert_eq(_fmt_gp_rate(0.37), "+0.37/s", "positive rate")
 	return true
 
 
 func test_fmt_gp_rate_high() -> bool:
 	""" GP rate formats high value correctly """
-	var r = _runner()
-	r.assert_eq(_fmt_gp_rate(1.2), "+1.20/s", "high rate")
+	assert_eq(_fmt_gp_rate(1.2), "+1.20/s", "high rate")
 	return true
 
 
 func test_fmt_gp_rate_zero() -> bool:
 	""" GP rate formats zero """
-	var r = _runner()
-	r.assert_eq(_fmt_gp_rate(0.0), "+0.00/s", "zero rate")
+	assert_eq(_fmt_gp_rate(0.0), "+0.00/s", "zero rate")
 	return true
 
 
 func test_fmt_gp_rate_negative() -> bool:
 	""" GP rate formats negative value """
-	var r = _runner()
-	r.assert_eq(_fmt_gp_rate(-0.37), "+-0.37/s", "negative rate")
+	assert_eq(_fmt_gp_rate(-0.37), "+-0.37/s", "negative rate")
 	return true
 
 
@@ -86,57 +74,49 @@ func test_fmt_gp_rate_negative() -> bool:
 
 func test_rival_display_name_aggressive() -> bool:
 	""" Aggressive rival display name is 'Red' """
-	var r = _runner()
-	r.assert_eq(_rival_display_name("aggressive"), "Red", "aggressive -> Red")
+	assert_eq(_rival_display_name("aggressive"), "Red", "aggressive -> Red")
 	return true
 
 
 func test_rival_display_name_defensive() -> bool:
 	""" Defensive rival display name is 'Orange' """
-	var r = _runner()
-	r.assert_eq(_rival_display_name("defensive"), "Orange", "defensive -> Orange")
+	assert_eq(_rival_display_name("defensive"), "Orange", "defensive -> Orange")
 	return true
 
 
 func test_rival_display_name_opportunistic() -> bool:
 	""" Opportunistic rival display name is 'Violet' """
-	var r = _runner()
-	r.assert_eq(_rival_display_name("opportunistic"), "Violet", "opportunistic -> Violet")
+	assert_eq(_rival_display_name("opportunistic"), "Violet", "opportunistic -> Violet")
 	return true
 
 
 func test_rival_display_name_unknown() -> bool:
 	""" Unknown personality returns the string as-is """
-	var r = _runner()
-	r.assert_eq(_rival_display_name("pacifist"), "pacifist", "unknown -> self")
+	assert_eq(_rival_display_name("pacifist"), "pacifist", "unknown -> self")
 	return true
 
 
 func test_rival_icon_color_aggressive() -> bool:
 	""" Aggressive rival icon color is red """
-	var r = _runner()
-	r.assert_eq(_rival_icon_color("aggressive"), Color(0.88, 0.18, 0.18), "aggressive color")
+	assert_eq(_rival_icon_color("aggressive"), Color(0.88, 0.18, 0.18), "aggressive color")
 	return true
 
 
 func test_rival_icon_color_defensive() -> bool:
 	""" Defensive rival icon color is orange """
-	var r = _runner()
-	r.assert_eq(_rival_icon_color("defensive"), Color(0.92, 0.55, 0.08), "defensive color")
+	assert_eq(_rival_icon_color("defensive"), Color(0.92, 0.55, 0.08), "defensive color")
 	return true
 
 
 func test_rival_icon_color_opportunistic() -> bool:
 	""" Opportunistic rival icon color is violet """
-	var r = _runner()
-	r.assert_eq(_rival_icon_color("opportunistic"), Color(0.65, 0.18, 0.85), "opportunistic color")
+	assert_eq(_rival_icon_color("opportunistic"), Color(0.65, 0.18, 0.85), "opportunistic color")
 	return true
 
 
 func test_rival_icon_color_unknown() -> bool:
 	""" Unknown personality returns GRAY """
-	var r = _runner()
-	r.assert_eq(_rival_icon_color("unknown"), Color.GRAY, "unknown -> gray")
+	assert_eq(_rival_icon_color("unknown"), Color.GRAY, "unknown -> gray")
 	return true
 
 
@@ -145,48 +125,42 @@ func test_rival_icon_color_unknown() -> bool:
 func test_tree_status_available() -> bool:
 	""" Tree with trades and no cooldown returns 'available' """
 	var tree: Dictionary = {"trades_left": 3, "cooldown": 0.0, "linked_to": -1}
-	var r = _runner()
-	r.assert_eq(_tree_status(tree, 6), "available", "available tree")
+	assert_eq(_tree_status(tree, 6), "available", "available tree")
 	return true
 
 
 func test_tree_status_cooldown() -> bool:
 	""" Tree with cooldown returns 'cooldown' """
 	var tree: Dictionary = {"trades_left": 2, "cooldown": 1.5, "linked_to": -1}
-	var r = _runner()
-	r.assert_eq(_tree_status(tree, 6), "cooldown", "cooldown tree")
+	assert_eq(_tree_status(tree, 6), "cooldown", "cooldown tree")
 	return true
 
 
 func test_tree_status_depleted() -> bool:
 	""" Tree with no trades returns 'depleted' """
 	var tree: Dictionary = {"trades_left": 0, "cooldown": 0.0, "linked_to": -1}
-	var r = _runner()
-	r.assert_eq(_tree_status(tree, 6), "depleted", "depleted tree")
+	assert_eq(_tree_status(tree, 6), "depleted", "depleted tree")
 	return true
 
 
 func test_tree_status_linked() -> bool:
 	""" Tree with link returns 'linked' """
 	var tree: Dictionary = {"trades_left": 3, "cooldown": 0.0, "linked_to": 1}
-	var r = _runner()
-	r.assert_eq(_tree_status(tree, 6), "linked", "linked tree")
+	assert_eq(_tree_status(tree, 6), "linked", "linked tree")
 	return true
 
 
 func test_tree_status_linked_depleted() -> bool:
 	""" Linked tree with no trades still shows 'linked' """
 	var tree: Dictionary = {"trades_left": 0, "cooldown": 0.0, "linked_to": 0}
-	var r = _runner()
-	r.assert_eq(_tree_status(tree, 6), "linked", "linked depleted tree")
+	assert_eq(_tree_status(tree, 6), "linked", "linked depleted tree")
 	return true
 
 
 func test_tree_status_defaults() -> bool:
 	""" Tree with missing keys defaults to depleted (trades_left defaults to 0) """
 	var tree: Dictionary = {}
-	var r = _runner()
-	r.assert_eq(_tree_status(tree, 6), "depleted", "defaults to depleted")
+	assert_eq(_tree_status(tree, 6), "depleted", "defaults to depleted")
 	return true
 
 
@@ -194,36 +168,31 @@ func test_tree_status_defaults() -> bool:
 
 func test_tree_status_color_available() -> bool:
 	""" Available tree color is green """
-	var r = _runner()
-	r.assert_eq(_tree_status_color("available"), Color(0.3, 0.8, 0.3), "available green")
+	assert_eq(_tree_status_color("available"), Color(0.3, 0.8, 0.3), "available green")
 	return true
 
 
 func test_tree_status_color_cooldown() -> bool:
 	""" Cooldown tree color is orange """
-	var r = _runner()
-	r.assert_eq(_tree_status_color("cooldown"), Color(0.9, 0.6, 0.2), "cooldown orange")
+	assert_eq(_tree_status_color("cooldown"), Color(0.9, 0.6, 0.2), "cooldown orange")
 	return true
 
 
 func test_tree_status_color_depleted() -> bool:
 	""" Depleted tree color is red """
-	var r = _runner()
-	r.assert_eq(_tree_status_color("depleted"), Color(0.9, 0.2, 0.2), "depleted red")
+	assert_eq(_tree_status_color("depleted"), Color(0.9, 0.2, 0.2), "depleted red")
 	return true
 
 
 func test_tree_status_color_linked() -> bool:
 	""" Linked tree color is purple """
-	var r = _runner()
-	r.assert_eq(_tree_status_color("linked"), Color(0.6, 0.4, 0.95), "linked purple")
+	assert_eq(_tree_status_color("linked"), Color(0.6, 0.4, 0.95), "linked purple")
 	return true
 
 
 func test_tree_status_color_unknown() -> bool:
 	""" Unknown status returns GRAY """
-	var r = _runner()
-	r.assert_eq(_tree_status_color("unknown"), Color.GRAY, "unknown -> gray")
+	assert_eq(_tree_status_color("unknown"), Color.GRAY, "unknown -> gray")
 	return true
 
 
@@ -231,50 +200,43 @@ func test_tree_status_color_unknown() -> bool:
 
 func test_gp_bar_color_high() -> bool:
 	""" High GP (>30) returns green """
-	var r = _runner()
-	r.assert_eq(_gp_bar_color(50.0), Color(0.25, 0.75, 0.35), "high GP green")
+	assert_eq(_gp_bar_color(50.0), Color(0.25, 0.75, 0.35), "high GP green")
 	return true
 
 
 func test_gp_bar_color_medium() -> bool:
 	""" Medium GP (10-30) returns yellow-green """
-	var r = _runner()
-	r.assert_eq(_gp_bar_color(20.0), Color(0.5, 0.8, 0.25), "medium GP yellow-green")
+	assert_eq(_gp_bar_color(20.0), Color(0.5, 0.8, 0.25), "medium GP yellow-green")
 	return true
 
 
 func test_gp_bar_color_low() -> bool:
 	""" Low GP (<10) returns orange-red """
-	var r = _runner()
-	r.assert_eq(_gp_bar_color(5.0), Color(0.9, 0.4, 0.15), "low GP orange-red")
+	assert_eq(_gp_bar_color(5.0), Color(0.9, 0.4, 0.15), "low GP orange-red")
 	return true
 
 
 func test_gp_bar_color_critical() -> bool:
 	""" Critical GP (<5) returns red """
-	var r = _runner()
-	r.assert_eq(_gp_bar_color(2.0), Color(0.9, 0.15, 0.15), "critical GP red")
+	assert_eq(_gp_bar_color(2.0), Color(0.9, 0.15, 0.15), "critical GP red")
 	return true
 
 
 func test_gp_bar_color_boundary_30() -> bool:
 	""" GP at exactly 30 returns green (>=30 threshold) """
-	var r = _runner()
-	r.assert_eq(_gp_bar_color(30.0), Color(0.25, 0.75, 0.35), "GP=30 green")
+	assert_eq(_gp_bar_color(30.0), Color(0.25, 0.75, 0.35), "GP=30 green")
 	return true
 
 
 func test_gp_bar_color_boundary_10() -> bool:
 	""" GP at exactly 10 returns yellow-green (>=10 threshold) """
-	var r = _runner()
-	r.assert_eq(_gp_bar_color(10.0), Color(0.5, 0.8, 0.25), "GP=10 yellow-green")
+	assert_eq(_gp_bar_color(10.0), Color(0.5, 0.8, 0.25), "GP=10 yellow-green")
 	return true
 
 
 func test_gp_bar_color_boundary_5() -> bool:
 	""" GP at exactly 5 returns orange-red (>=5 threshold) """
-	var r = _runner()
-	r.assert_eq(_gp_bar_color(5.0), Color(0.9, 0.4, 0.15), "GP=5 orange-red")
+	assert_eq(_gp_bar_color(5.0), Color(0.9, 0.4, 0.15), "GP=5 orange-red")
 	return true
 
 

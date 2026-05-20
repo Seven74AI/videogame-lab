@@ -48,8 +48,8 @@ func test_tutorial_complete_config():
 	var was_complete: bool = tm.is_complete()
 	if not was_complete:
 		tm.skip_tutorial()
-		assert_true(tm.is_complete(), "After skip, tutorial should be complete")
-		assert_false(tm.is_tutorial_active(), "After skip, tutorial should not be active")
+	assert_true(tm.is_complete(), "After skip, tutorial should be complete")
+	assert_false(tm.is_tutorial_active(), "After skip, tutorial should not be active")
 
 
 func test_tutorial_advance_blocks():

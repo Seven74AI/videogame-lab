@@ -12,7 +12,7 @@ extends GutTest
 func test_new_game_creates_valid_state():
 	"""After new_game(), all player fields should be initialized correctly."""
 	var gm := get_node_or_null("/root/GameManager")
-		assert_not_null(gm, "GameManager exists")
+	assert_not_null(gm, "GameManager exists")
 	if gm == null: return
 
 	gm.new_game()
@@ -34,7 +34,7 @@ func test_new_game_creates_valid_state():
 func test_new_game_player_has_one_cell():
 	"""Player starts with exactly 1 mycelium cell."""
 	var gm := get_node_or_null("/root/GameManager")
-		if gm == null: return
+	if gm == null: return
 	gm.new_game()
 
 	assert_eq(gm.player_cells.size(), 1, "player starts with 1 cell")
@@ -45,7 +45,7 @@ func test_new_game_player_has_one_cell():
 func test_new_game_creates_three_trees():
 	"""3 trees should be placed with correct initial state."""
 	var gm := get_node_or_null("/root/GameManager")
-		if gm == null: return
+	if gm == null: return
 	gm.new_game()
 
 	assert_eq(gm.trees.size(), 3, "3 trees created")
@@ -61,7 +61,7 @@ func test_new_game_creates_three_trees():
 func test_new_game_grid_has_dimensions():
 	"""Grid should be 60x40 and contain resources."""
 	var gm := get_node_or_null("/root/GameManager")
-		if gm == null: return
+	if gm == null: return
 	gm.new_game()
 
 	assert_eq(gm.grid.size(), gm.GRID_H, "grid height = 40")
@@ -81,7 +81,7 @@ func test_new_game_grid_has_dimensions():
 func test_gp_accrues_over_time():
 	"""player_gp increases with base rate * delta."""
 	var gm := get_node_or_null("/root/GameManager")
-		if gm == null: return
+	if gm == null: return
 	gm.new_game()
 
 	var before: float = gm.player_gp
@@ -96,7 +96,7 @@ func test_gp_accrues_over_time():
 func test_growth_cost_vs_gp():
 	"""Growth should only succeed when player has enough GP."""
 	var gm := get_node_or_null("/root/GameManager")
-		if gm == null: return
+	if gm == null: return
 	gm.new_game()
 
 	# Find the growth cost for a player-adjacent cell
@@ -123,7 +123,7 @@ func test_growth_cost_vs_gp():
 func test_grow_into_water_gives_gp_and_water():
 	"""Growing into a WATER cell should give +2 GP and +1 water."""
 	var gm := get_node_or_null("/root/GameManager")
-		if gm == null: return
+	if gm == null: return
 	gm.new_game()
 
 	# Find a WATER cell adjacent to player
@@ -150,7 +150,7 @@ func test_grow_into_water_gives_gp_and_water():
 func test_grow_into_mineral_gives_gp_and_mineral():
 	"""Growing into a MINERAL cell should give +3 GP and +1 mineral."""
 	var gm := get_node_or_null("/root/GameManager")
-		if gm == null: return
+	if gm == null: return
 	gm.new_game()
 
 	for d in gm.DIRS_8:
@@ -175,7 +175,7 @@ func test_grow_into_mineral_gives_gp_and_mineral():
 func test_grow_into_sugar_gives_gp_rate_boost():
 	"""Growing into a SUGAR cell should boost GP rate."""
 	var gm := get_node_or_null("/root/GameManager")
-		if gm == null: return
+	if gm == null: return
 	gm.new_game()
 
 	for d in gm.DIRS_8:
@@ -201,7 +201,7 @@ func test_grow_into_sugar_gives_gp_rate_boost():
 func test_trade_fails_without_minerals():
 	"""Trade requires minerals — fails when player has none."""
 	var gm := get_node_or_null("/root/GameManager")
-		if gm == null: return
+	if gm == null: return
 	gm.new_game()
 
 	# Deplete minerals
@@ -225,7 +225,7 @@ func test_trade_fails_without_minerals():
 func test_trade_success_exchanges_resources():
 	"""A successful trade should exchange minerals for sugars."""
 	var gm := get_node_or_null("/root/GameManager")
-		if gm == null: return
+	if gm == null: return
 	gm.new_game()
 
 	# Give minerals and position player next to tree 0
@@ -249,7 +249,7 @@ func test_trade_success_exchanges_resources():
 func test_trade_respects_cooldown():
 	"""A tree on cooldown should reject trades."""
 	var gm := get_node_or_null("/root/GameManager")
-		if gm == null: return
+	if gm == null: return
 	gm.new_game()
 
 	gm.player_minerals = 20
@@ -274,7 +274,7 @@ func test_trade_respects_cooldown():
 func test_pulse_only_on_exhausted_tree():
 	"""Deep Root Pulse only works when trades_left = 0."""
 	var gm := get_node_or_null("/root/GameManager")
-		if gm == null: return
+	if gm == null: return
 	gm.new_game()
 
 	# Tree with trades — pulse should be blocked
@@ -298,7 +298,7 @@ func test_pulse_only_on_exhausted_tree():
 func test_link_trees_success():
 	"""Linking two exhausted trees should set linked_to and add bonus trades."""
 	var gm := get_node_or_null("/root/GameManager")
-		if gm == null: return
+	if gm == null: return
 	gm.new_game()
 
 	gm.trees[0]["trades_left"] = 0
@@ -316,7 +316,7 @@ func test_link_trees_success():
 func test_unlink_removes_bonus_and_relationship():
 	"""Unlinking should clear linked_to and remove bonus trades (capped at 0)."""
 	var gm := get_node_or_null("/root/GameManager")
-		if gm == null: return
+	if gm == null: return
 	gm.new_game()
 
 	gm.trees[0]["trades_left"] = 0
@@ -340,7 +340,7 @@ func test_unlink_removes_bonus_and_relationship():
 func test_difficulty_tier_progression():
 	"""Difficulty tier should increase as player territory grows."""
 	var gm := get_node_or_null("/root/GameManager")
-		if gm == null: return
+	if gm == null: return
 	gm.new_game()
 
 	# Default: 1 cell out of 2400 => ~0.04% => tier 0
@@ -364,7 +364,7 @@ func test_difficulty_tier_progression():
 func test_speed_multiplier_increases_with_tier():
 	"""Rival speed multiplier should increase with territory."""
 	var gm := get_node_or_null("/root/GameManager")
-		if gm == null: return
+	if gm == null: return
 	gm.new_game()
 
 	var mult0: float = gm.get_rival_speed_multiplier()
@@ -390,7 +390,7 @@ func test_setup_rivals_creates_three_rivals():
 	"""AIManager.setup_rivals() should create 3 rivals."""
 	var am := get_node_or_null("/root/AIManager")
 	var gm := get_node_or_null("/root/GameManager")
-		if am == null or gm == null: return
+	if am == null or gm == null: return
 	gm.new_game()
 	am.setup_rivals()
 
@@ -408,7 +408,7 @@ func test_rivals_have_distinct_personalities():
 	"""Three rivals should have unique personalities."""
 	var am := get_node_or_null("/root/AIManager")
 	var gm := get_node_or_null("/root/GameManager")
-		if am == null or gm == null: return
+	if am == null or gm == null: return
 	gm.new_game()
 	am.setup_rivals()
 
@@ -427,7 +427,7 @@ func test_rival_growth_increases_cells():
 	"""Rival growth should add cells over time."""
 	var am := get_node_or_null("/root/AIManager")
 	var gm := get_node_or_null("/root/GameManager")
-		if am == null or gm == null: return
+	if am == null or gm == null: return
 	gm.new_game()
 	am.setup_rivals()
 
@@ -447,7 +447,7 @@ func test_rival_growth_increases_cells():
 func test_check_game_over_player_died():
 	"""check_game_over() should detect dead player (no cells)."""
 	var gm := get_node_or_null("/root/GameManager")
-		if gm == null: return
+	if gm == null: return
 	gm.new_game()
 
 	gm.player_cells.clear()
@@ -460,7 +460,7 @@ func test_check_game_over_player_died():
 func test_check_game_over_grid_full():
 	"""check_game_over() should detect full grid."""
 	var gm := get_node_or_null("/root/GameManager")
-		if gm == null: return
+	if gm == null: return
 	gm.new_game()
 
 	# Fill grid (leave one for player)
@@ -479,7 +479,7 @@ func test_check_game_over_grid_full():
 func test_end_game_idempotent():
 	"""Calling end_game twice should not double-record or change reason."""
 	var gm := get_node_or_null("/root/GameManager")
-		if gm == null: return
+	if gm == null: return
 	gm.new_game()
 
 	gm.player_cells.append(Vector2i(30, 20))
@@ -498,7 +498,7 @@ func test_end_game_idempotent():
 func test_reset_clears_state():
 	"""reset() should clear game_over, reinitialize from new_game()."""
 	var gm := get_node_or_null("/root/GameManager")
-		if gm == null: return
+	if gm == null: return
 	gm.new_game()
 
 	gm.end_game("test")
@@ -519,7 +519,7 @@ func test_reset_clears_state():
 func test_history_records_on_interval():
 	"""History should record snapshots every HISTORY_INTERVAL seconds."""
 	var gm := get_node_or_null("/root/GameManager")
-		if gm == null: return
+	if gm == null: return
 	gm.new_game()
 
 	var initial_count: int = gm.history.size()
@@ -535,7 +535,7 @@ func test_history_records_on_interval():
 func test_history_snapshot_has_all_fields():
 	"""Each snapshot should contain required fields."""
 	var gm := get_node_or_null("/root/GameManager")
-		if gm == null: return
+	if gm == null: return
 	gm.new_game()
 
 	var snap: Dictionary = gm.history[0]
@@ -552,7 +552,7 @@ func test_history_snapshot_has_all_fields():
 func test_tree_regen_over_time():
 	"""Tree should regen trades when depleted and unlinked."""
 	var gm := get_node_or_null("/root/GameManager")
-		if gm == null: return
+	if gm == null: return
 	gm.new_game()
 
 	# Deplete a tree
@@ -575,7 +575,7 @@ func test_full_game_lifecycle():
 	"""new_game → grow → trade → reset should all work without crashes."""
 	var gm := get_node_or_null("/root/GameManager")
 	var am := get_node_or_null("/root/AIManager")
-		if gm == null or am == null: return
+	if gm == null or am == null: return
 
 	# Phase 1: New game
 	gm.new_game()

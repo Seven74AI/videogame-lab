@@ -6,7 +6,7 @@ extends GutTest
 
 func test_message_system_has_types():
 	"""UILayer MSG_COLORS dict should have info/warning/success/error keys."""
-		# We can't easily access the UILayer from tests, so test through GameManager
+	# We can't easily access the UILayer from tests, so test through GameManager
 	var gm := get_node_or_null("/root/GameManager")
 	assert_not_null(gm, "GameManager should exist")
 	if gm == null: return
@@ -19,7 +19,7 @@ func test_message_system_has_types():
 func test_show_message_signal_exists():
 	"""GameManager should have show_message signal."""
 	var gm := get_node_or_null("/root/GameManager")
-		if gm == null: return
+	if gm == null: return
 
 	# Check that the signal is connectable (it exists)
 	var has_signal: bool = gm.has_signal("show_message")
@@ -29,7 +29,7 @@ func test_show_message_signal_exists():
 func test_message_text_settable():
 	"""Message text should be settable and retrievable."""
 	var gm := get_node_or_null("/root/GameManager")
-		if gm == null: return
+	if gm == null: return
 
 	gm.message_text = "Test message"
 	gm.message_timer = 1.0
@@ -40,7 +40,7 @@ func test_message_text_settable():
 func test_message_timer_decrements():
 	"""simulate: message_timer should decrement without crashing."""
 	var gm := get_node_or_null("/root/GameManager")
-		if gm == null: return
+	if gm == null: return
 
 	gm.message_text = "Timer test"
 	gm.message_timer = 2.0
@@ -52,7 +52,7 @@ func test_message_timer_decrements():
 func test_absorb_triggers_message():
 	"""Absorbing a resource sets a message — tested through the game state change."""
 	var gm := get_node_or_null("/root/GameManager")
-		if gm == null: return
+	if gm == null: return
 
 	gm.message_text = ""  # Start empty
 	gm.message_timer = 0.0
@@ -78,7 +78,7 @@ func test_absorb_triggers_message():
 func test_difficulty_milestone_messages_exist():
 	"""Difficulty milestone messages array should be defined."""
 	var gm := get_node_or_null("/root/GameManager")
-		if gm == null: return
+	if gm == null: return
 
 	# The milestone messages come from main.gd's _check_difficulty_milestone.
 	# We can verify the difficulty tier system produces tier numbers that
@@ -91,7 +91,7 @@ func test_difficulty_milestone_messages_exist():
 func test_message_typed_show_doesnt_crash():
 	"""Calling show_message shouldn't crash (signal emission)."""
 	var gm := get_node_or_null("/root/GameManager")
-		if gm == null: return
+	if gm == null: return
 
 	gm.show_message.emit("test typed message")
 	gm.message_text = "test typed message"

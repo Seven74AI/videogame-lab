@@ -11,7 +11,7 @@ extends GutTest
 func test_ai_constants_exist():
 	"""RIVAL_INTERVAL_MIN, RIVAL_INTERVAL_MAX, DEATH_BLOCKADE_THRESHOLD are defined."""
 	var am := get_node_or_null("/root/AIManager")
-		assert_not_null(am, "AIManager autoload should exist")
+	assert_not_null(am, "AIManager autoload should exist")
 	if am == null: return
 	assert_gt(am.RIVAL_INTERVAL_MIN, 0.0, "RIVAL_INTERVAL_MIN > 0")
 	assert_gt(am.RIVAL_INTERVAL_MAX, am.RIVAL_INTERVAL_MIN, "RIVAL_INTERVAL_MAX > MIN")
@@ -21,7 +21,7 @@ func test_ai_constants_exist():
 func test_phase_configs_all_personalities():
 	"""PHASE_CONFIGS has aggressive, defensive, opportunistic entries."""
 	var am := get_node_or_null("/root/AIManager")
-		if am == null: return
+	if am == null: return
 	assert_true(am.PHASE_CONFIGS.has("aggressive"), "has aggressive")
 	assert_true(am.PHASE_CONFIGS.has("defensive"), "has defensive")
 	assert_true(am.PHASE_CONFIGS.has("opportunistic"), "has opportunistic")
@@ -37,7 +37,7 @@ func test_phase_configs_all_personalities():
 func test_phase_multipliers_defined():
 	"""PHASE_MULTIPLIERS has entries for all 6 phases."""
 	var am := get_node_or_null("/root/AIManager")
-		if am == null: return
+	if am == null: return
 	var expected_phases := ["aggressive", "frenzy", "defensive", "fortify", "opportunistic", "harvest"]
 	for phase in expected_phases:
 		assert_true(am.PHASE_MULTIPLIERS.has(phase), "%s multiplier exists" % phase)
@@ -51,7 +51,7 @@ func test_phase_multipliers_defined():
 func test_phase_pulse_colors_defined():
 	"""PHASE_PULSE_COLORS has frenzy, fortify, harvest entries with valid alpha."""
 	var am := get_node_or_null("/root/AIManager")
-		if am == null: return
+	if am == null: return
 	assert_true(am.PHASE_PULSE_COLORS.has("frenzy"), "frenzy pulse color")
 	assert_true(am.PHASE_PULSE_COLORS.has("fortify"), "fortify pulse color")
 	assert_true(am.PHASE_PULSE_COLORS.has("harvest"), "harvest pulse color")
@@ -66,7 +66,7 @@ func test_phase_pulse_colors_defined():
 func test_get_phase_multiplier_known_phases():
 	"""get_phase_multiplier returns correct values for known phases."""
 	var am := get_node_or_null("/root/AIManager")
-		if am == null: return
+	if am == null: return
 	assert_eq(am.get_phase_multiplier("frenzy"), 1.5, "frenzy ×1.5")
 	assert_eq(am.get_phase_multiplier("fortify"), 1.3, "fortify ×1.3")
 	assert_eq(am.get_phase_multiplier("harvest"), 1.8, "harvest ×1.8")
@@ -76,14 +76,14 @@ func test_get_phase_multiplier_known_phases():
 func test_get_phase_multiplier_unknown():
 	"""get_phase_multiplier defaults to 1.0 for unknown phases."""
 	var am := get_node_or_null("/root/AIManager")
-		if am == null: return
+	if am == null: return
 	assert_eq(am.get_phase_multiplier("nonexistent"), 1.0, "unknown = 1.0")
 
 
 func test_get_phase_pulse_color_known():
 	"""get_phase_pulse_color returns correct values."""
 	var am := get_node_or_null("/root/AIManager")
-		if am == null: return
+	if am == null: return
 	assert_eq(am.get_phase_pulse_color("frenzy"), Color(1.0, 0.2, 0.1, 0.6), "frenzy pulse")
 	assert_eq(am.get_phase_pulse_color("fortify"), Color(1.0, 0.65, 0.1, 0.6), "fortify pulse")
 	assert_eq(am.get_phase_pulse_color("harvest"), Color(0.75, 0.2, 1.0, 0.6), "harvest pulse")
@@ -92,7 +92,7 @@ func test_get_phase_pulse_color_known():
 func test_get_phase_pulse_color_unknown():
 	"""get_phase_pulse_color returns transparent black for unknown phases."""
 	var am := get_node_or_null("/root/AIManager")
-		if am == null: return
+	if am == null: return
 	var col: Color = am.get_phase_pulse_color("normal_phase")
 	assert_eq(col.a, 0.0, "unknown phase = transparent")
 
@@ -102,7 +102,7 @@ func test_get_phase_pulse_color_unknown():
 func test_rival_name_red():
 	"""Red rival color maps to 'Red'."""
 	var am := get_node_or_null("/root/AIManager")
-		if am == null: return
+	if am == null: return
 	var name: String = am._rival_name(Color(0.88, 0.18, 0.18))
 	assert_eq(name, "Red", "red color → Red")
 
@@ -110,7 +110,7 @@ func test_rival_name_red():
 func test_rival_name_orange():
 	"""Orange rival color maps to 'Orange'."""
 	var am := get_node_or_null("/root/AIManager")
-		if am == null: return
+	if am == null: return
 	var name: String = am._rival_name(Color(0.92, 0.55, 0.08))
 	assert_eq(name, "Orange", "orange color → Orange")
 
@@ -118,7 +118,7 @@ func test_rival_name_orange():
 func test_rival_name_violet():
 	"""Violet rival color maps to 'Violet'."""
 	var am := get_node_or_null("/root/AIManager")
-		if am == null: return
+	if am == null: return
 	var name: String = am._rival_name(Color(0.65, 0.18, 0.85))
 	assert_eq(name, "Violet", "violet color → Violet")
 
@@ -126,7 +126,7 @@ func test_rival_name_violet():
 func test_rival_name_unknown():
 	"""Unknown color maps to '???'."""
 	var am := get_node_or_null("/root/AIManager")
-		if am == null: return
+	if am == null: return
 	var name: String = am._rival_name(Color.BLUE)
 	assert_eq(name, "???", "unknown color → ???")
 
@@ -137,7 +137,7 @@ func test_update_rival_phases_decrements_timer():
 	"""update_rival_phases() decrements phase_timer on all rivals."""
 	var gm := get_node_or_null("/root/GameManager")
 	var am := get_node_or_null("/root/AIManager")
-		if gm == null or am == null: return
+	if gm == null or am == null: return
 
 	gm.new_game()
 	am.setup_rivals()
@@ -161,7 +161,7 @@ func test_advance_phase_cycles_aggressive():
 	"""Advancing through aggressive phases: aggressive → frenzy → aggressive."""
 	var gm := get_node_or_null("/root/GameManager")
 	var am := get_node_or_null("/root/AIManager")
-		if gm == null or am == null: return
+	if gm == null or am == null: return
 
 	gm.new_game()
 	am.setup_rivals()
@@ -187,7 +187,7 @@ func test_advance_phase_cycles_defensive():
 	"""Advancing through defensive phases: defensive → fortify → defensive."""
 	var gm := get_node_or_null("/root/GameManager")
 	var am := get_node_or_null("/root/AIManager")
-		if gm == null or am == null: return
+	if gm == null or am == null: return
 
 	gm.new_game()
 	am.setup_rivals()
@@ -209,7 +209,7 @@ func test_advance_phase_cycles_opportunistic():
 	"""Advancing through opportunistic phases: opportunistic → harvest → opportunistic."""
 	var gm := get_node_or_null("/root/GameManager")
 	var am := get_node_or_null("/root/AIManager")
-		if gm == null or am == null: return
+	if gm == null or am == null: return
 
 	gm.new_game()
 	am.setup_rivals()
@@ -233,7 +233,7 @@ func test_setup_rivals_creates_three():
 	"""setup_rivals() creates exactly 3 rivals after new_game()."""
 	var gm := get_node_or_null("/root/GameManager")
 	var am := get_node_or_null("/root/AIManager")
-		if gm == null or am == null: return
+	if gm == null or am == null: return
 
 	gm.new_game()
 	am.setup_rivals()
@@ -248,7 +248,7 @@ func test_setup_rivals_distinct_personalities():
 	"""setup_rivals() gives each rival a distinct personality."""
 	var gm := get_node_or_null("/root/GameManager")
 	var am := get_node_or_null("/root/AIManager")
-		if gm == null or am == null: return
+	if gm == null or am == null: return
 
 	gm.new_game()
 	am.setup_rivals()
@@ -266,7 +266,7 @@ func test_setup_rivals_initial_state():
 	"""Each rival has correct initial state: one cell, 10 GP, first phase."""
 	var gm := get_node_or_null("/root/GameManager")
 	var am := get_node_or_null("/root/AIManager")
-		if gm == null or am == null: return
+	if gm == null or am == null: return
 
 	gm.new_game()
 	am.setup_rivals()
@@ -287,7 +287,7 @@ func test_setup_rivals_astar_created():
 	"""setup_rivals() creates an AStarGrid2D for pathfinding."""
 	var gm := get_node_or_null("/root/GameManager")
 	var am := get_node_or_null("/root/AIManager")
-		if gm == null or am == null: return
+	if gm == null or am == null: return
 
 	gm.new_game()
 	am.setup_rivals()
@@ -303,7 +303,7 @@ func test_rival_timers_initialized():
 	"""After setup_rivals(), all rival timers are positive and within interval range."""
 	var gm := get_node_or_null("/root/GameManager")
 	var am := get_node_or_null("/root/AIManager")
-		if gm == null or am == null: return
+	if gm == null or am == null: return
 
 	gm.new_game()
 	am.setup_rivals()
@@ -320,7 +320,7 @@ func test_setup_rivals_idempotent():
 	"""Calling setup_rivals() twice reset all rival state."""
 	var gm := get_node_or_null("/root/GameManager")
 	var am := get_node_or_null("/root/AIManager")
-		if gm == null or am == null: return
+	if gm == null or am == null: return
 
 	gm.new_game()
 	am.setup_rivals()
@@ -342,7 +342,7 @@ func test_rival_grow_increases_cells():
 	"""rival_grow() adds a cell to the rival."""
 	var gm := get_node_or_null("/root/GameManager")
 	var am := get_node_or_null("/root/AIManager")
-		if gm == null or am == null: return
+	if gm == null or am == null: return
 
 	gm.new_game()
 	am.setup_rivals()
@@ -357,7 +357,7 @@ func test_rival_grow_increments_blockade():
 	"""rival_grow() increments blockade ticks when completely surrounded."""
 	var gm := get_node_or_null("/root/GameManager")
 	var am := get_node_or_null("/root/AIManager")
-		if gm == null or am == null: return
+	if gm == null or am == null: return
 
 	gm.new_game()
 	am.setup_rivals()
@@ -385,7 +385,7 @@ func test_blockaded_rival_dies_after_threshold():
 	"""Rival dies after DEATH_BLOCKADE_THRESHOLD consecutive blockaded ticks."""
 	var gm := get_node_or_null("/root/GameManager")
 	var am := get_node_or_null("/root/AIManager")
-		if gm == null or am == null: return
+	if gm == null or am == null: return
 
 	gm.new_game()
 	am.setup_rivals()

@@ -11,7 +11,7 @@ extends GutTest
 
 func test_msg_colors_has_all_types():
 	"""MSG_COLORS dictionary has all 5 message types."""
-		var scene := load("res://scenes/ui_layer.tscn")
+	var scene := load("res://scenes/ui_layer.tscn")
 	var instance: CanvasLayer = scene.instantiate()
 	assert_true(instance.MSG_COLORS.has("info"), "has info")
 	assert_true(instance.MSG_COLORS.has("warning"), "has warning")
@@ -23,7 +23,7 @@ func test_msg_colors_has_all_types():
 
 func test_msg_colors_distinct():
 	"""Each message type has a distinct color."""
-		var scene := load("res://scenes/ui_layer.tscn")
+	var scene := load("res://scenes/ui_layer.tscn")
 	var instance: CanvasLayer = scene.instantiate()
 	var colors: Array[Color] = []
 	for key in instance.MSG_COLORS:
@@ -37,7 +37,7 @@ func test_msg_colors_distinct():
 
 func test_msg_colors_info_blue():
 	"""Info message color is light blue."""
-		var scene := load("res://scenes/ui_layer.tscn")
+	var scene := load("res://scenes/ui_layer.tscn")
 	var instance: CanvasLayer = scene.instantiate()
 	var c: Color = instance.MSG_COLORS["info"]
 	assert_gt(c.b, 0.95, "info has high blue")
@@ -47,7 +47,7 @@ func test_msg_colors_info_blue():
 
 func test_flash_duration_value():
 	"""FLASH_DURATION should be 0.3 seconds."""
-		var scene := load("res://scenes/ui_layer.tscn")
+	var scene := load("res://scenes/ui_layer.tscn")
 	var instance: CanvasLayer = scene.instantiate()
 	assert_eq(instance.FLASH_DURATION, 0.3, "FLASH_DURATION = 0.3")
 	instance.free()
@@ -55,7 +55,7 @@ func test_flash_duration_value():
 
 func test_flash_color_is_white():
 	"""FLASH_COLOR should be pure white."""
-		var scene := load("res://scenes/ui_layer.tscn")
+	var scene := load("res://scenes/ui_layer.tscn")
 	var instance: CanvasLayer = scene.instantiate()
 	assert_eq(instance.FLASH_COLOR, Color(1.0, 1.0, 1.0, 1.0), "flash = white")
 	instance.free()
@@ -65,7 +65,7 @@ func test_flash_color_is_white():
 
 func test_hud_scene_loadable():
 	"""UILayer scene and script should be loadable and instantiable."""
-		assert_true(ResourceLoader.exists("res://scenes/ui_layer.tscn"), "ui_layer.tscn exists")
+	assert_true(ResourceLoader.exists("res://scenes/ui_layer.tscn"), "ui_layer.tscn exists")
 	assert_true(ResourceLoader.exists("res://scenes/ui_layer.gd"), "ui_layer.gd exists")
 	var scene: PackedScene = load("res://scenes/ui_layer.tscn")
 	assert_not_null(scene, "scene loadable")
@@ -76,7 +76,7 @@ func test_hud_scene_loadable():
 
 func test_hud_add_to_tree_populates_onready():
 	"""When added to scene tree, @onready nodes populate correctly."""
-		var scene: PackedScene = load("res://scenes/ui_layer.tscn")
+	var scene: PackedScene = load("res://scenes/ui_layer.tscn")
 	var instance: CanvasLayer = scene.instantiate()
 	add_child(instance)
 	await get_tree().process_frame
@@ -98,7 +98,7 @@ func test_hud_add_to_tree_populates_onready():
 
 func test_controls_label_populated():
 	"""Controls label mentions key game instructions after _refresh_controls."""
-		var scene: PackedScene = load("res://scenes/ui_layer.tscn")
+	var scene: PackedScene = load("res://scenes/ui_layer.tscn")
 	var instance: CanvasLayer = scene.instantiate()
 	add_child(instance)
 	await get_tree().process_frame
@@ -118,7 +118,7 @@ func test_controls_label_populated():
 
 func test_refresh_gp_updates_label():
 	"""_refresh_gp sets GP label with value and rate."""
-		GameManager.new_game()
+	GameManager.new_game()
 	var scene: PackedScene = load("res://scenes/ui_layer.tscn")
 	var instance: CanvasLayer = scene.instantiate()
 	add_child(instance)
@@ -140,7 +140,7 @@ func test_refresh_gp_updates_label():
 
 func test_refresh_gp_bar_color_cached():
 	"""GP bar StyleBoxFlat is cached and reused."""
-		GameManager.new_game()
+	GameManager.new_game()
 	var scene: PackedScene = load("res://scenes/ui_layer.tscn")
 	var instance: CanvasLayer = scene.instantiate()
 	add_child(instance)
@@ -166,7 +166,7 @@ func test_refresh_gp_bar_color_cached():
 
 func test_refresh_resources_updates_labels():
 	"""_refresh_resources sets all 5 resource labels correctly."""
-		GameManager.new_game()
+	GameManager.new_game()
 	var scene: PackedScene = load("res://scenes/ui_layer.tscn")
 	var instance: CanvasLayer = scene.instantiate()
 	add_child(instance)
@@ -194,7 +194,7 @@ func test_refresh_resources_updates_labels():
 
 func test_refresh_resources_flash_on_increase():
 	"""Resource labels should flash when resource count increases."""
-		GameManager.new_game()
+	GameManager.new_game()
 	var scene: PackedScene = load("res://scenes/ui_layer.tscn")
 	var instance: CanvasLayer = scene.instantiate()
 	add_child(instance)
@@ -225,7 +225,7 @@ func test_refresh_resources_flash_on_increase():
 
 func test_refresh_territory_updates_label():
 	"""_refresh_territory updates territory label with percentage and tier."""
-		GameManager.new_game()
+	GameManager.new_game()
 	var scene: PackedScene = load("res://scenes/ui_layer.tscn")
 	var instance: CanvasLayer = scene.instantiate()
 	add_child(instance)
@@ -257,7 +257,7 @@ func test_refresh_territory_updates_label():
 
 func test_refresh_message_visible_with_timer():
 	"""Message label is visible when message_timer > 0."""
-		GameManager.new_game()
+	GameManager.new_game()
 	var scene: PackedScene = load("res://scenes/ui_layer.tscn")
 	var instance: CanvasLayer = scene.instantiate()
 	add_child(instance)
@@ -276,7 +276,7 @@ func test_refresh_message_visible_with_timer():
 
 func test_refresh_message_hidden_when_expired():
 	"""Message label is hidden when timer = 0."""
-		GameManager.new_game()
+	GameManager.new_game()
 	var scene: PackedScene = load("res://scenes/ui_layer.tscn")
 	var instance: CanvasLayer = scene.instantiate()
 	add_child(instance)
@@ -296,7 +296,7 @@ func test_refresh_message_hidden_when_expired():
 
 func test_show_typed_message_sets_text():
 	"""show_typed_message() displays text with type-specific color."""
-		GameManager.new_game()
+	GameManager.new_game()
 	var scene: PackedScene = load("res://scenes/ui_layer.tscn")
 	var instance: CanvasLayer = scene.instantiate()
 	add_child(instance)
@@ -312,7 +312,7 @@ func test_show_typed_message_sets_text():
 
 func test_show_typed_message_sets_game_manager():
 	"""show_typed_message() also sets GameManager message state."""
-		GameManager.new_game()
+	GameManager.new_game()
 	var scene: PackedScene = load("res://scenes/ui_layer.tscn")
 	var instance: CanvasLayer = scene.instantiate()
 	add_child(instance)
@@ -329,7 +329,7 @@ func test_show_typed_message_sets_game_manager():
 
 func test_show_typed_message_unknown_type_defaults():
 	"""Unknown message type falls back to 'info' color."""
-		var scene: PackedScene = load("res://scenes/ui_layer.tscn")
+	var scene: PackedScene = load("res://scenes/ui_layer.tscn")
 	var instance: CanvasLayer = scene.instantiate()
 	add_child(instance)
 	await get_tree().process_frame
@@ -343,7 +343,7 @@ func test_show_typed_message_unknown_type_defaults():
 
 func test_show_typed_message_milestone():
 	"""Milestone messages use orange color."""
-		GameManager.new_game()
+	GameManager.new_game()
 	var scene: PackedScene = load("res://scenes/ui_layer.tscn")
 	var instance: CanvasLayer = scene.instantiate()
 	add_child(instance)
@@ -361,7 +361,7 @@ func test_show_typed_message_milestone():
 
 func test_on_state_changed_calls_refresh():
 	"""_on_state_changed signal triggers _refresh (does not crash)."""
-		GameManager.new_game()
+	GameManager.new_game()
 	var scene: PackedScene = load("res://scenes/ui_layer.tscn")
 	var instance: CanvasLayer = scene.instantiate()
 	add_child(instance)
@@ -378,7 +378,7 @@ func test_on_state_changed_calls_refresh():
 
 func test_on_message_sets_label():
 	"""_on_message handler sets message label text and makes it visible."""
-		GameManager.new_game()
+	GameManager.new_game()
 	var scene: PackedScene = load("res://scenes/ui_layer.tscn")
 	var instance: CanvasLayer = scene.instantiate()
 	add_child(instance)
@@ -396,7 +396,7 @@ func test_on_message_sets_label():
 
 func test_refresh_rivals_after_setup():
 	"""After AIManager.setup_rivals(), all 3 panels show with names and stats."""
-		GameManager.new_game()
+	GameManager.new_game()
 	AIManager.rivals.clear()
 	AIManager.rival_intervals.clear()
 	AIManager.rival_timers.resize(3)
@@ -425,7 +425,7 @@ func test_refresh_rivals_after_setup():
 
 func test_refresh_rivals_phase_modulate():
 	"""Rival name modulate changes when in special phase (not base personality)."""
-		GameManager.new_game()
+	GameManager.new_game()
 	# Reset AIManager rivals; resize rival_timers to 3 for setup_rivals() index assignment
 	AIManager.rivals.clear()
 	AIManager.rival_intervals.clear()
@@ -454,7 +454,7 @@ func test_refresh_rivals_phase_modulate():
 
 func test_refresh_trees_shows_all_three():
 	"""Tree panels 1-3 are visible with status info."""
-		GameManager.new_game()
+	GameManager.new_game()
 
 	var scene: PackedScene = load("res://scenes/ui_layer.tscn")
 	var instance: CanvasLayer = scene.instantiate()
@@ -478,7 +478,7 @@ func test_refresh_trees_shows_all_three():
 
 func test_gp_bar_color_from_hud():
 	"""UILayer._gp_bar_color matches expected thresholds."""
-		var scene: PackedScene = load("res://scenes/ui_layer.tscn")
+	var scene: PackedScene = load("res://scenes/ui_layer.tscn")
 	var instance: CanvasLayer = scene.instantiate()
 
 	assert_eq(instance._gp_bar_color(50.0), Color(0.25, 0.75, 0.35), ">=30 → green")
@@ -495,7 +495,7 @@ func test_gp_bar_color_from_hud():
 
 func test_regen_bar_formatting():
 	"""_regen_bar produces a bracketed ASCII bar."""
-		var scene: PackedScene = load("res://scenes/ui_layer.tscn")
+	var scene: PackedScene = load("res://scenes/ui_layer.tscn")
 	var instance: CanvasLayer = scene.instantiate()
 
 	var bar: String = instance._regen_bar(30.0, 60.0)

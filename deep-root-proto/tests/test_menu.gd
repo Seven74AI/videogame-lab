@@ -12,7 +12,7 @@ extends GutTest
 
 func test_fade_state_enum_values():
 	"""FadeState enum: 4 distinct states for FADING_IN, IDLE, FADING_OUT, WAITING."""
-		# Values from the actual enum: FadeState { FADING_IN=0, IDLE=1, FADING_OUT=2, WAITING=3 }
+	# Values from the actual enum: FadeState { FADING_IN=0, IDLE=1, FADING_OUT=2, WAITING=3 }
 	assert_eq(0, 0, "FADING_IN = 0 (first state)")
 	assert_ne(0, 1, "IDLE differs from FADING_IN")
 	assert_ne(1, 2, "FADING_OUT differs from IDLE")
@@ -21,7 +21,7 @@ func test_fade_state_enum_values():
 
 func test_title_screen_scene_loadable():
 	"""Title screen scene and script should be loadable."""
-		assert_true(ResourceLoader.exists("res://scenes/title_screen.tscn"), "title_screen.tscn exists")
+	assert_true(ResourceLoader.exists("res://scenes/title_screen.tscn"), "title_screen.tscn exists")
 	assert_true(ResourceLoader.exists("res://scenes/title_screen.gd"), "title_screen.gd exists")
 	if ResourceLoader.exists("res://scenes/title_screen.tscn"):
 		var scene: PackedScene = load("res://scenes/title_screen.tscn")
@@ -35,7 +35,7 @@ func test_title_screen_scene_loadable():
 
 func test_fade_in_progress_decreases():
 	"""Fade-in: _fade_progress decreases from 1.0 to 0.0."""
-		var progress: float = 1.0
+	var progress: float = 1.0
 	var delta: float = 0.1
 	var duration: float = 0.6
 	progress -= delta / duration  # Fade in logic
@@ -48,7 +48,7 @@ func test_fade_in_progress_decreases():
 
 func test_fade_out_progress_increases():
 	"""Fade-out: _fade_progress increases from 0.0 to 1.0."""
-		var progress: float = 0.0
+	var progress: float = 0.0
 	var delta: float = 0.1
 	var duration: float = 0.6
 	progress += delta / duration  # Fade out logic
@@ -63,7 +63,7 @@ func test_fade_out_progress_increases():
 
 func test_fade_duration_positive():
 	"""FADE_DURATION should be positive (0.6 seconds)."""
-		var scene := load("res://scenes/title_screen.tscn")
+	var scene := load("res://scenes/title_screen.tscn")
 	var instance: CanvasLayer = scene.instantiate()
 	assert_gt(instance.FADE_DURATION, 0.0, "FADE_DURATION > 0")
 	assert_eq(instance.FADE_DURATION, 0.6, "FADE_DURATION = 0.6s")
@@ -72,7 +72,7 @@ func test_fade_duration_positive():
 
 func test_fade_hold_positive():
 	"""FADE_HOLD duration should be 1.0 seconds (dramatic pause)."""
-		var scene := load("res://scenes/title_screen.tscn")
+	var scene := load("res://scenes/title_screen.tscn")
 	var instance: CanvasLayer = scene.instantiate()
 	assert_gt(instance.FADE_HOLD, 0.0, "FADE_HOLD > 0")
 	assert_eq(instance.FADE_HOLD, 1.0, "FADE_HOLD = 1.0s")
@@ -83,7 +83,7 @@ func test_fade_hold_positive():
 
 func test_start_button_only_from_idle():
 	"""Start button should only transition state when in IDLE."""
-		var scene := load("res://scenes/title_screen.tscn")
+	var scene := load("res://scenes/title_screen.tscn")
 	var instance: CanvasLayer = scene.instantiate()
 	add_child(instance)
 	await get_tree().process_frame  # Let @onready vars populate
@@ -112,7 +112,7 @@ func test_start_button_only_from_idle():
 
 func test_hover_data_constants():
 	"""Hover color and scale values are well-defined (approximate float comparison)."""
-		# hover_on: gold color
+	# hover_on: gold color
 	assert_eq(Color(1.0, 0.95, 0.7, 1.0).r, 1.0, "hover_on gold has full red")
 	assert_true(Vector2(1.06, 1.06).x > 1.05, "hover_on scale ~= 1.06 (x)")
 	assert_true(Vector2(1.06, 1.06).x < 1.07, "hover_on scale ~= 1.06 (x upper)")
@@ -124,7 +124,7 @@ func test_hover_data_constants():
 
 func test_hover_guard_respects_state():
 	"""_on_btn_hover returns early when not in IDLE state."""
-		var scene := load("res://scenes/title_screen.tscn")
+	var scene := load("res://scenes/title_screen.tscn")
 	var instance: CanvasLayer = scene.instantiate()
 	add_child(instance)
 	await get_tree().process_frame
@@ -144,7 +144,7 @@ func test_hover_guard_respects_state():
 
 func test_show_title_resets_state():
 	"""show_title() should make visible, set FADING_IN, reset fade to black."""
-		var scene := load("res://scenes/title_screen.tscn")
+	var scene := load("res://scenes/title_screen.tscn")
 	var instance: CanvasLayer = scene.instantiate()
 	add_child(instance)
 	await get_tree().process_frame
@@ -168,7 +168,7 @@ func test_show_title_resets_state():
 
 func test_particle_count():
 	"""PARTICLE_COUNT should be 40."""
-		var scene := load("res://scenes/title_screen.tscn")
+	var scene := load("res://scenes/title_screen.tscn")
 	var instance: CanvasLayer = scene.instantiate()
 	assert_eq(instance.PARTICLE_COUNT, 40, "PARTICLE_COUNT = 40")
 	instance.free()
@@ -176,7 +176,7 @@ func test_particle_count():
 
 func test_particle_init_creates_array():
 	"""_init_particles should fill _particles array with 40 dictionaries."""
-		var scene := load("res://scenes/title_screen.tscn")
+	var scene := load("res://scenes/title_screen.tscn")
 	var instance: CanvasLayer = scene.instantiate()
 
 	instance._init_particles()
@@ -196,7 +196,7 @@ func test_particle_init_creates_array():
 
 func test_particle_speed_range():
 	"""Particle speeds should be in [8.0, 25.0]."""
-		var scene := load("res://scenes/title_screen.tscn")
+	var scene := load("res://scenes/title_screen.tscn")
 	var instance: CanvasLayer = scene.instantiate()
 	instance._init_particles()
 
@@ -211,7 +211,7 @@ func test_particle_speed_range():
 
 func test_deco_wave_returns_non_empty():
 	"""_build_deco_wave should return a non-empty string with color tags."""
-		var scene := load("res://scenes/title_screen.tscn")
+	var scene := load("res://scenes/title_screen.tscn")
 	var instance: CanvasLayer = scene.instantiate()
 
 	var wave: String = instance._build_deco_wave(1.5)
@@ -227,7 +227,7 @@ func test_deco_wave_returns_non_empty():
 
 func test_start_game_signal_defined():
 	"""Title screen should define start_game_pressed signal."""
-		var scene := load("res://scenes/title_screen.tscn")
+	var scene := load("res://scenes/title_screen.tscn")
 	var instance: CanvasLayer = scene.instantiate()
 	var has_signal: bool = instance.has_signal("start_game_pressed")
 	assert_true(has_signal, "start_game_pressed signal defined")
@@ -238,7 +238,7 @@ func test_start_game_signal_defined():
 
 func test_version_label_text():
 	"""Version label should show 'proto v3' (uses scene default text)."""
-		var scene := load("res://scenes/title_screen.tscn")
+	var scene := load("res://scenes/title_screen.tscn")
 	var instance: CanvasLayer = scene.instantiate()
 	add_child(instance)
 	await get_tree().process_frame
@@ -251,7 +251,7 @@ func test_version_label_text():
 
 func test_controls_label_not_empty():
 	"""Controls label should mention key game instructions."""
-		var scene := load("res://scenes/title_screen.tscn")
+	var scene := load("res://scenes/title_screen.tscn")
 	var instance: CanvasLayer = scene.instantiate()
 	add_child(instance)
 	await get_tree().process_frame
@@ -266,7 +266,7 @@ func test_controls_label_not_empty():
 
 func test_title_base_scale_stored():
 	"""_title_base_scale should be set to Vector2.ONE initially."""
-		var scene := load("res://scenes/title_screen.tscn")
+	var scene := load("res://scenes/title_screen.tscn")
 	var instance: CanvasLayer = scene.instantiate()
 
 	# _title_base_scale defaults to Vector2.ONE (line 17)

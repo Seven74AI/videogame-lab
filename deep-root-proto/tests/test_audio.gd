@@ -39,8 +39,8 @@ func test_sfx_volumes_defined():
 	for sfx_name: String in am.SFX_NAMES:
 		assert_true(am.SFX_VOLUMES.has(sfx_name), "%s has volume" % sfx_name)
 		var vol: float = am.SFX_VOLUMES[sfx_name]
-		assert_le(vol, 0.0, "%s volume ≤ 0dB" % sfx_name)
-		assert_ge(vol, -10.0, "%s volume ≥ -10dB" % sfx_name)
+		assert_true(vol <= 0.0, "%s volume ≤ 0dB" % sfx_name)
+		assert_true(vol >= -10.0, "%s volume ≥ -10dB" % sfx_name)
 
 
 func test_sfx_round_robin_pointer_initial():

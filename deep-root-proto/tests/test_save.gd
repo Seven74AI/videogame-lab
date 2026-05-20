@@ -4,12 +4,19 @@
 # ═══════════════════════════════════════════════════════════════
 extends GutTest
 
+
+func _runner():
+	return get_parent()
+
+
 func test_save_resource_creatable() -> bool:
 	""" Resource objects should be instantiable """
 	var res: Resource = Resource.new()
-	assert_not_null(res, "Resource creatable")
+	var r = _runner()
+	r.assert_not_null(res, "Resource creatable")
 	# Resource is RefCounted in Godot 4 — no manual free needed
 	return true
+
 
 func test_save_data_serialization() -> bool:
 	""" Save data serializes to Dictionary """
@@ -22,19 +29,23 @@ func test_save_data_serialization() -> bool:
 		"player_absorbed": 12,
 	}
 
-	assert_eq(save_data["seed"], 12345)
-	assert_eq(save_data["player_gp"], 42.5)
-	assert_eq(save_data["player_sugars"], 5)
+	var r = _runner()
+	r.assert_eq(save_data["seed"], 12345)
+	r.assert_eq(save_data["player_gp"], 42.5)
+	r.assert_eq(save_data["player_sugars"], 5)
 	return true
+
 
 func test_save_grid_state() -> bool:
 	""" Grid state should serialize as Array[Array] """
 	var grid: Array[Array] = [[0, 0, 1], [0, 5, 0], [2, 0, 0]]
 
-	assert_eq(grid.size(), 3)
-	assert_eq(grid[0][2], 1)
-	assert_eq(grid[1][1], 5)
+	var r = _runner()
+	r.assert_eq(grid.size(), 3)
+	r.assert_eq(grid[0][2], 1)
+	r.assert_eq(grid[1][1], 5)
 	return true
+
 
 func test_save_roundtrip() -> bool:
 	""" Saved dict should survive deep copy roundtrip """
@@ -48,12 +59,15 @@ func test_save_roundtrip() -> bool:
 	}
 	var loaded: Dictionary = saved.duplicate(true)
 
-	assert_eq(loaded["player_gp"], saved["player_gp"])
-	assert_eq(loaded["rivals"].size(), 3)
+	var r = _runner()
+	r.assert_eq(loaded["player_gp"], saved["player_gp"])
+	r.assert_eq(loaded["rivals"].size(), 3)
 	return true
+
 
 func test_save_path_portable() -> bool:
 	""" Save path uses user:// prefix for portability """
 	var save_path: String = "user://deep_root_save.tres"
-	assert_true(save_path.begins_with("user://"))
+	var r = _runner()
+	r.assert_true(save_path.begins_with("user://"))
 	return true

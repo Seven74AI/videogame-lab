@@ -84,8 +84,8 @@ func test_difficulty_milestone_messages_exist():
 	# We can verify the difficulty tier system produces tier numbers that
 	# the milestone system can use.
 	var tier: int = gm.get_difficulty_tier()
-	assert_ge(tier, 0, "Tier should be >= 0")
-	assert_le(tier, 5, "Tier should be <= 5")
+	assert_true(tier >= 0, "Tier should be >= 0")
+	assert_true(tier <= 5, "Tier should be <= 5")
 
 
 func test_message_typed_show_doesnt_crash():

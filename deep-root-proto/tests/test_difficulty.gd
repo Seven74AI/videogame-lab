@@ -10,7 +10,7 @@ func test_difficulty_constants_exist():
 	assert_not_null(gm, "GameManager should exist")
 	if gm == null: return
 
-	assert_ge(gm.DIFFICULTY_TIER_TERRITORY.size(), 3, "Should have at least 3 difficulty tiers")
+	assert_true(gm.DIFFICULTY_TIER_TERRITORY.size() >= 3, "Should have at least 3 difficulty tiers")
 	assert_eq(gm.DIFFICULTY_TIER_TERRITORY.size(), gm.DIFFICULTY_RIVAL_MULTIPLIERS.size(),
 	"Tier and multiplier arrays should be same size")
 	assert_eq(gm.DIFFICULTY_TIER_TERRITORY.size(), gm.DIFFICULTY_NAMES.size(),
@@ -33,8 +33,8 @@ func test_player_territory_pct_returns_float():
 
 	var pct: float = gm.player_territory_pct()
 	assert_eq(typeof(pct), TYPE_FLOAT, "Territory pct should be float")
-	assert_ge(pct, 0.0, "Territory pct should be >= 0")
-	assert_le(pct, 100.0, "Territory pct should be <= 100")
+	assert_true(pct >= 0.0, "Territory pct should be >= 0")
+	assert_true(pct <= 100.0, "Territory pct should be <= 100")
 
 
 func test_rival_speed_multiplier_default():
@@ -43,7 +43,7 @@ func test_rival_speed_multiplier_default():
 	if gm == null: return
 
 	var mult: float = gm.get_rival_speed_multiplier()
-	assert_ge(mult, 1.0, "Speed multiplier should be >= 1.0")
+	assert_true(mult >= 1.0, "Speed multiplier should be >= 1.0")
 
 
 func test_difficulty_name_not_empty():

@@ -357,8 +357,8 @@ func test_difficulty_tier_progression():
 		if gm.player_cells.size() >= 400:
 			break
 
-	assert_ge(gm.player_cells.size(), 360, "at least 360 cells placed (15%% threshold)")
-	assert_ge(gm.get_difficulty_tier(), 2, "tier >= 2 with >=15%% territory")
+	assert_true(gm.player_cells.size() >= 360, "at least 360 cells placed (15%% threshold)")
+	assert_true(gm.get_difficulty_tier() >= 2, "tier >= 2 with >=15%% territory")
 
 
 func test_speed_multiplier_increases_with_tier():
@@ -381,7 +381,7 @@ func test_speed_multiplier_increases_with_tier():
 
 	if gm.player_cells.size() >= 450:
 		var mult_new: float = gm.get_rival_speed_multiplier()
-		assert_ge(mult_new, 1.15, "multiplier increased with territory")
+		assert_true(mult_new >= 1.15, "multiplier increased with territory")
 
 
 # ── Rival initialization ─────────────────────────────────
@@ -437,7 +437,7 @@ func test_rival_growth_increases_cells():
 		am.rival_grow(0)
 
 	var final_cells: int = am.rivals[0]["cells"].size()
-	assert_ge(final_cells, initial_cells, "rival cells increased or stayed same")
+	assert_true(final_cells >= initial_cells, "rival cells increased or stayed same")
 	# With 3 growth ticks on an empty grid, should have gained at least some cells
 	# (defensive rival might grow slower, so we just check non-decrease)
 
@@ -603,7 +603,7 @@ func test_full_game_lifecycle():
 	gm.grid[tp.y][tp.x + 1] = gm.CellType.MYCELIUM
 	var trades_before: int = gm.trees[0]["trades_left"]
 	gm.trade(0)
-	assert_le(gm.trees[0]["trades_left"], trades_before, "phase 3: trade consumed a use")
+	assert_true(gm.trees[0]["trades_left"] <= trades_before, "phase 3: trade consumed a use")
 
 	# Phase 4: Reset
 	gm.reset()
